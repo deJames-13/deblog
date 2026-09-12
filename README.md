@@ -1,6 +1,5 @@
 <div align="center">
 
-<img src="web/public/android-chrome-192x192.png" alt="deblog Logo" width="128" height="128" />
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="web/public/assets/images/title-no-bg-dark.png">
