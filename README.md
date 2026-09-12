@@ -1,45 +1,40 @@
-<div align="center">
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="web/public/assets/images/title-no-bg-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="web/public/assets/images/title-no-bg-light.png">
+    <img src="web/public/assets/images/title-no-bg-light.png" alt="deblog" width="340" />
   </picture>
 </p>
 
-
-# 🚀 deblog — Modern Full-Stack Developer Blog
-
-[![Angular](https://img.shields.io/badge/Angular-22.1-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev/)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![Architecture](https://img.shields.io/badge/Architecture-Vertical_Slice-blueviolet?style=for-the-badge)](#-system-architecture)
-[![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f?style=for-the-badge)](./LICENSE)
-
 <p align="center">
-  <b>A high-performance, developer-first personal blogging platform engineered with an Angular 22 signal-driven frontend and an ASP.NET Core 10 Vertical Slice Architecture backend.</b>
+  <strong>A high-performance, developer-first personal blogging platform engineered with an Angular 22 signal-driven frontend and an ASP.NET Core 10 Vertical Slice Architecture backend.</strong>
 </p>
 
-[✨ Live Features](#-key-features) •
-[🏛️ Architecture](#-system-architecture) •
-[📦 Tech Stack](#-tech-stack) •
-[🚀 Getting Started](#-getting-started) •
-[🔌 API Reference](#-api-reference) •
-[⚙️ Configuration](#-configuration--environment) •
-[📄 License](#-license)
+<p align="center">
+  <a href="https://angular.dev"><img src="https://img.shields.io/badge/Angular-22.1-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular 22" /></a>
+  <a href="https://dotnet.microsoft.com"><img src="https://img.shields.io/badge/.NET-10.0_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" /></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6.0" /></a>
+  <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS-v4.1-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS v4.1" /></a>
+  <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-Auth_%26_PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" /></a>
+  <a href="#%EF%B8%8F-system-architecture"><img src="https://img.shields.io/badge/Architecture-Vertical_Slice-blueviolet?style=for-the-badge" alt="Vertical Slice Architecture" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-2ea44f?style=for-the-badge" alt="License: MIT" /></a>
+</p>
 
-</div>
-
----
-
-## 📍 Road Map 
-- [ ] web and server Integration
-- [ ] web and Supabase JWT authentication Setup
-- [ ] Post management optimizing
-- [ ] Web placeholder and mock data clean up
-- [ ] web and server data alignment
+<p align="center">
+  <a href="#-overview">Overview</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#%EF%B8%8F-system-architecture">Architecture</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-repository-structure">Repository Structure</a> •
+  <a href="#-getting-started">Getting Started</a> •
+  <a href="#-api-reference">API Reference</a> •
+  <a href="#%EF%B8%8F-configuration--environment">Configuration</a> •
+  <a href="#-running-tests">Testing</a> •
+  <a href="#-roadmap">Roadmap</a> •
+  <a href="#-contributing">Contributing</a> •
+  <a href="#-license">License</a>
+</p>
 
 ---
 
@@ -341,6 +336,16 @@ pnpm test
 
 ---
 
+## 📍 Roadmap
+
+- [ ] web and server Integration
+- [ ] web and Supabase JWT authentication Setup
+- [ ] Post management optimizing
+- [ ] Web placeholder and mock data clean up
+- [ ] web and server data alignment
+
+---
+
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
@@ -359,8 +364,6 @@ This project is open source and available under the terms of the **[MIT License]
 
 ---
 
-<div align="center">
-
-Crafted with ☕ and clean code by **[Derick Espinosa](https://github.com/deJames-13)**
-
-</div>
+<p align="center">
+  Crafted with ☕ and clean code by <a href="https://github.com/deJames-13"><strong>Derick Espinosa</strong></a>
+</p>
