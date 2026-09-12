@@ -3,7 +3,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="web/public/assets/images/title-no-bg-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="web/public/assets/images/title-no-bg-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="web/public/assets/images/title-no-bg-light.png">
   </picture>
 </p>
 
