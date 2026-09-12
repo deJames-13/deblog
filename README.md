@@ -1,6 +1,8 @@
-# 🚀 deblog — Modern Full-Stack Developer Blog
-
 <div align="center">
+
+<img src="web/public/assets/images/logo.png" alt="deblog Logo" width="128" height="128" />
+
+# 🚀 deblog — Modern Full-Stack Developer Blog
 
 [![Angular](https://img.shields.io/badge/Angular-22.1-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev/)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
