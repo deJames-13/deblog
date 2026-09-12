@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="web/public/assets/images/logo.png" alt="deblog Logo" width="128" height="128" />
+<img src="web/public/android-chrome-192x192.png" alt="deblog Logo" width="128" height="128" />
 
 # 🚀 deblog — Modern Full-Stack Developer Blog
 
