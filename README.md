@@ -28,6 +28,15 @@
 
 ---
 
+## 📍 Road Map 
+- [ ] web and server Integration
+- [ ] web and Supabase JWT authentication Setup
+- [ ] Post management optimizing
+- [ ] Web placeholder and mock data clean up
+- [ ] web and server data alignment
+
+---
+
 ## 📖 Overview
 
 **deblog** is a production-grade, full-stack personal blogging solution tailored for developers and tech writers. Built with modern web standards, it combines a tactile, retro-futuristic developer aesthetic with enterprise-grade engineering practices:
