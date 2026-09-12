@@ -1,0 +1,309 @@
+@let fd = formData();
+
+<div id="admin-settings-view" class="space-y-4 font-mono-bios text-xs">
+  <!-- Header -->
+  <div class="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+    <div>
+      <h2 class="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
+        SYSTEM & PROFILE SETTINGS
+      </h2>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        (click)="handleReset()"
+        class="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-orange)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer text-xs transition-colors"
+      >
+        <svg lucideRotateCcw class="w-3.5 h-3.5"></svg>
+        <span>Defaults</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="handleSave($event)"
+        class="flex items-center gap-1.5 px-4 py-1 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase hover:opacity-90 cursor-pointer"
+      >
+        <svg lucideSave class="w-3.5 h-3.5"></svg>
+        <span>Save Changes</span>
+      </button>
+    </div>
+  </div>
+
+  <form (submit)="handleSave($event)" class="space-y-4">
+    <!-- Section 1: Visual Identity & Branding -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm space-y-4">
+      <div class="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)] font-bold uppercase tracking-wider text-[var(--accent-terminal)]">
+        <svg lucideImage class="w-4 h-4"></svg>
+        <span>VISUAL BRANDING & ASSETS</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Avatar Upload Box -->
+        <div class="p-3 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[11px] text-[var(--text-primary)] uppercase">
+              Profile Avatar (1:1 Ratio)
+            </span>
+            <span class="text-[9px] text-[var(--text-dim)]">WebP Auto-Crop</span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 border border-[var(--border-color)] bg-black/40 overflow-hidden shrink-0 relative group">
+              <img
+                [src]="fd.avatar_url"
+                alt="Avatar Preview"
+                class="w-full h-full object-cover grayscale"
+              />
+              <button
+                type="button"
+                (click)="openCropperForCurrent('avatar_url')"
+                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
+              >
+                CROP
+              </button>
+            </div>
+
+            <div class="flex-1 space-y-2">
+              <input
+                #avatarFileInput
+                type="file"
+                accept="image/*"
+                class="hidden"
+                (change)="handleFileSelect($event, 'avatar_url')"
+              />
+
+              <div
+                (dragover)="$event.preventDefault()"
+                (drop)="handleDrop($event, 'avatar_url')"
+                (click)="avatarFileInput.click()"
+                class="border border-dashed border-[var(--border-color)] hover:border-[var(--accent-terminal)] p-2.5 text-center cursor-pointer bg-[var(--bg-surface)] text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                Click or Drop new Avatar image
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  (click)="openCropperForCurrent('avatar_url')"
+                  class="px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[10px] text-[var(--text-primary)] cursor-pointer flex items-center gap-1"
+                >
+                  <svg lucideCrop class="w-3 h-3 text-[var(--accent-terminal)]"></svg>
+                  <span>Adjust Crop</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner Upload Box -->
+        <div class="p-3 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[11px] text-[var(--text-primary)] uppercase">
+              Sidebar Banner (3:1 Ratio)
+            </span>
+            <span class="text-[9px] text-[var(--text-dim)]">Wide Landscape</span>
+          </div>
+
+          <div class="space-y-2">
+            <div class="h-16 w-full border border-[var(--border-color)] bg-black/40 overflow-hidden relative group">
+              <img
+                [src]="fd.banner_url"
+                alt="Banner Preview"
+                class="w-full h-full object-cover grayscale opacity-80"
+              />
+              <button
+                type="button"
+                (click)="openCropperForCurrent('banner_url')"
+                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
+              >
+                CROP BANNER
+              </button>
+            </div>
+
+            <input
+              #bannerFileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="handleFileSelect($event, 'banner_url')"
+            />
+
+            <div class="flex items-center gap-2">
+              <div
+                (dragover)="$event.preventDefault()"
+                (drop)="handleDrop($event, 'banner_url')"
+                (click)="bannerFileInput.click()"
+                class="flex-1 border border-dashed border-[var(--border-color)] hover:border-[var(--accent-terminal)] p-1.5 text-center cursor-pointer bg-[var(--bg-surface)] text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                Drop or Click to change Banner
+              </div>
+
+              <button
+                type="button"
+                (click)="openCropperForCurrent('banner_url')"
+                class="px-2 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[10px] text-[var(--text-primary)] cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <svg lucideCrop class="w-3 h-3 text-[var(--accent-terminal)]"></svg>
+                <span>Crop</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Author Profile & Bio -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm space-y-3">
+      <div class="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)] font-bold uppercase tracking-wider text-[var(--accent-blue)]">
+        <svg lucideUser class="w-4 h-4"></svg>
+        <span>AUTHOR PROFILE DETAILS</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Full Name
+          </label>
+          <input
+            type="text"
+            required
+            [value]="fd.name"
+            (input)="formData.update((prev) => ({ ...prev, name: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Professional Title / Role
+          </label>
+          <input
+            type="text"
+            required
+            [value]="fd.role"
+            (input)="formData.update((prev) => ({ ...prev, role: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Tagline
+          </label>
+          <input
+            type="text"
+            [value]="fd.tagline"
+            (input)="formData.update((prev) => ({ ...prev, tagline: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Biography
+          </label>
+          <textarea
+            rows="3"
+            [value]="fd.bio"
+            (input)="formData.update((prev) => ({ ...prev, bio: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] p-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)] resize-y leading-relaxed"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Contact Email
+          </label>
+          <input
+            type="email"
+            required
+            [value]="fd.email"
+            (input)="formData.update((prev) => ({ ...prev, email: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Location
+          </label>
+          <input
+            type="text"
+            [value]="fd.location"
+            (input)="formData.update((prev) => ({ ...prev, location: $any($event.target).value }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Social Coordinates -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm space-y-3">
+      <div class="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)] font-bold uppercase tracking-wider text-[var(--accent-pink)]">
+        <svg lucideShare2 class="w-4 h-4"></svg>
+        <span>SOCIAL NETWORK COORDINATES</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
+            GitHub URL
+          </label>
+          <input
+            type="url"
+            [value]="fd.social_links.github"
+            (input)="formData.update((prev) => ({ ...prev, social_links: { ...prev.social_links, github: $any($event.target).value } }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
+            LinkedIn URL
+          </label>
+          <input
+            type="url"
+            [value]="fd.social_links.linkedin"
+            (input)="formData.update((prev) => ({ ...prev, social_links: { ...prev.social_links, linkedin: $any($event.target).value } }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
+            Facebook URL
+          </label>
+          <input
+            type="url"
+            [value]="fd.social_links.facebook"
+            (input)="formData.update((prev) => ({ ...prev, social_links: { ...prev.social_links, facebook: $any($event.target).value } }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
+            Instagram URL
+          </label>
+          <input
+            type="url"
+            [value]="fd.social_links.instagram"
+            (input)="formData.update((prev) => ({ ...prev, social_links: { ...prev.social_links, instagram: $any($event.target).value } }))"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Image Crop Modal Instance -->
+  <app-image-crop-modal
+    [isOpen]="cropModalOpen()"
+    [imageSrc]="cropImageSrc()"
+    [aspectRatio]="cropAspectRatio()"
+    [modalTitle]="cropTitle()"
+    (cropComplete)="handleCropComplete($event)"
+    (closeModal)="closeCropModal()"
+  />
+</div>

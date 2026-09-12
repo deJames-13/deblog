@@ -1,0 +1,263 @@
+<div id="admin-dashboard-home" class="space-y-4 font-mono-bios text-xs">
+  <!-- Pending Moderation Alert Banner -->
+  @if (pendingComments().length > 0) {
+    <div class="p-3 border border-[var(--accent-orange)] bg-[var(--accent-orange)]/10 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-[var(--accent-orange)]">
+        <svg lucideAlertTriangle class="w-4 h-4 shrink-0"></svg>
+        <span class="font-bold">
+          {{ pendingComments().length }} comment(s) pending review.
+        </span>
+      </div>
+      <button
+        type="button"
+        (click)="setAdminTab('comments')"
+        class="px-2.5 py-1 bg-[var(--accent-orange)] text-[var(--accent-orange-contrast)] font-bold uppercase hover:opacity-90 cursor-pointer text-[11px]"
+      >
+        Review →
+      </button>
+    </div>
+  }
+
+  <!-- Primary KPI Metrics Grid -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- Posts Stat -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 space-y-1">
+      <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] uppercase">
+        <span>POSTS</span>
+        <svg lucideFileText class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+      </div>
+      <div class="text-2xl font-bold text-[var(--text-primary)]">{{ posts().length }}</div>
+      <div class="text-[10px] text-[var(--text-muted)] flex items-center gap-2">
+        <span class="text-[var(--accent-terminal)] font-bold">{{ publishedCount() }} published</span>
+        <span>•</span>
+        <span class="text-[var(--accent-orange)]">{{ draftCount() }} drafts</span>
+      </div>
+    </div>
+
+    <!-- Views Stat -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 space-y-1">
+      <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] uppercase">
+        <span>VIEWS</span>
+        <svg lucideEye class="w-3.5 h-3.5 text-[var(--accent-blue)]"></svg>
+      </div>
+      <div class="text-2xl font-bold text-[var(--text-primary)]">{{ totalViews().toLocaleString() }}</div>
+      <div class="text-[10px] text-[var(--text-muted)] flex items-center gap-2">
+        <span>{{ publishedCount() }} published</span>
+      </div>
+    </div>
+
+    <!-- Likes Stat -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 space-y-1">
+      <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] uppercase">
+        <span>LIKES</span>
+        <svg lucideHeart class="w-3.5 h-3.5 text-[var(--accent-fkey)]"></svg>
+      </div>
+      <div class="text-2xl font-bold text-[var(--text-primary)]">{{ totalLikes() }}</div>
+      <div class="text-[10px] text-[var(--text-muted)]">
+        Engagement score: 4.8 / 5
+      </div>
+    </div>
+
+    <!-- Comments Stat -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 space-y-1">
+      <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] uppercase">
+        <span>COMMENTS</span>
+        <svg lucideMessageSquare class="w-3.5 h-3.5 text-[var(--accent-yellow)]"></svg>
+      </div>
+      <div class="text-2xl font-bold text-[var(--text-primary)]">{{ comments().length }}</div>
+      <div class="text-[10px] text-[var(--text-muted)] flex items-center gap-2">
+        <span class="text-[var(--accent-orange)] font-bold">{{ pendingComments().length }} pending</span>
+        <span>•</span>
+        <span>{{ comments().length - pendingComments().length }} active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telemetry & Media Storage Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <!-- 7-Day View Telemetry Chart -->
+    <div class="lg:col-span-2 border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 space-y-3">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs">
+        <div class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--text-primary)]">
+          <svg lucideTrendingUp class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+          <span>7-DAY ACCESS TELEMETRY</span>
+        </div>
+        <span class="text-[10px] text-[var(--text-dim)]">PEAK: 980 REQS</span>
+      </div>
+
+      <div class="h-32 flex items-end justify-between gap-2 pt-4 px-2">
+        @for (item of telemetryDays; track item.day) {
+          @let heightPct = Math.round((item.views / 1000) * 100);
+          <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
+            <span class="text-[9px] text-[var(--text-dim)] opacity-0 group-hover:opacity-100 transition-opacity font-mono">
+              {{ item.views }}
+            </span>
+            <div
+              class="w-full bg-[var(--accent-terminal)]/30 border-t-2 border-[var(--accent-terminal)] group-hover:bg-[var(--accent-terminal)] transition-all"
+              [style.height.%]="heightPct"
+            ></div>
+            <span class="text-[10px] text-[var(--text-muted)] font-mono">{{ item.day }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Media Storage Optimization Box -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 space-y-3">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs">
+        <div class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--text-primary)]">
+          <svg lucideHardDrive class="w-3.5 h-3.5 text-[var(--accent-blue)]"></svg>
+          <span>STORAGE TELEMETRY</span>
+        </div>
+        <span class="text-[10px] text-[var(--accent-terminal)] font-bold">-{{ spaceSavedPct() }}% WebP</span>
+      </div>
+
+      <div class="space-y-2.5 text-[11px]">
+        <div class="flex justify-between text-[var(--text-muted)]">
+          <span>Assets Managed:</span>
+          <span class="font-bold text-[var(--text-primary)] font-mono">{{ media().length }} files</span>
+        </div>
+
+        <div class="flex justify-between text-[var(--text-muted)]">
+          <span>Uncompressed Size:</span>
+          <span class="font-mono text-[var(--text-dim)]">{{ totalOriginalKb() }} KB</span>
+        </div>
+
+        <div class="flex justify-between text-[var(--text-muted)]">
+          <span>Optimized Footprint:</span>
+          <span class="font-bold text-[var(--accent-terminal)] font-mono">{{ totalOptimizedKb() }} KB</span>
+        </div>
+
+        <div class="flex justify-between text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-1.5">
+          <span>Network Bandwidth Saved:</span>
+          <span class="font-bold text-[var(--accent-terminal)] font-mono">{{ spaceSavedKb() }} KB</span>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button
+          type="button"
+          (click)="setAdminTab('media')"
+          class="w-full py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[11px] text-center cursor-pointer transition-colors"
+        >
+          Manage Media Assets →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dual Split: Recent Comments Moderation & Latest Posts Quick View -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+    <!-- Quick Moderation Queue -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 space-y-3">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs">
+        <div class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--text-primary)]">
+          <svg lucideMessageSquare class="w-3.5 h-3.5 text-[var(--accent-orange)]"></svg>
+          <span>RECENT COMMENTS</span>
+        </div>
+        <button
+          type="button"
+          (click)="setAdminTab('comments')"
+          class="text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+        >
+          VIEW ALL →
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        @for (c of recentComments(); track c.id) {
+          <div class="p-2.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-1.5 text-xs">
+            <div class="flex items-center justify-between text-[10px]">
+              <div class="font-bold text-[var(--text-primary)]">{{ c.author_name }}</div>
+              <span
+                class="px-1 py-0.2 uppercase font-bold text-[9px]"
+                [class.bg-[var(--accent-orange)]]="c.status === 'pending'"
+                [class.text-[var(--accent-orange-contrast)]]="c.status === 'pending'"
+                [class.bg-[var(--accent-terminal)]]="c.status === 'approved'"
+                [class.text-[var(--accent-terminal-contrast)]]="c.status === 'approved'"
+                [class.bg-red-500]="c.status === 'rejected' || c.status === 'spam'"
+                [class.text-white]="c.status === 'rejected' || c.status === 'spam'"
+              >
+                {{ c.status }}
+              </span>
+            </div>
+
+            <p class="text-[11px] text-[var(--text-muted)] line-clamp-2">
+              {{ c.content }}
+            </p>
+
+            @if (c.status === 'pending') {
+              <div class="flex items-center gap-2 pt-1 border-t border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  (click)="updateCommentStatus(c.id, 'approved')"
+                  class="px-2 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-[10px] cursor-pointer"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  (click)="updateCommentStatus(c.id, 'rejected')"
+                  class="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-dim)] hover:text-[var(--text-primary)] text-[10px] cursor-pointer"
+                >
+                  Reject
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Recent Posts Quick View -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 space-y-3">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs">
+        <div class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--text-primary)]">
+          <svg lucideFileText class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+          <span>RECENT POSTS</span>
+        </div>
+        <button
+          type="button"
+          (click)="setAdminTab('posts')"
+          class="text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+        >
+          MANAGE ALL →
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        @for (post of recentPosts(); track post.id) {
+          <div
+            (click)="viewPost(post.id)"
+            class="p-2.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] hover:border-[var(--accent-terminal)] cursor-pointer transition-colors space-y-1"
+          >
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-[var(--accent-terminal)] font-semibold">{{ post.category }}</span>
+              <span
+                class="px-1 py-0.2 uppercase font-bold text-[9px]"
+                [class.bg-[var(--accent-terminal)]]="post.status === 'published'"
+                [class.text-[var(--accent-terminal-contrast)]]="post.status === 'published'"
+                [class.bg-[var(--accent-orange)]]="post.status === 'draft'"
+                [class.text-[var(--accent-orange-contrast)]]="post.status === 'draft'"
+                [class.bg-[var(--bg-surface)]]="post.status === 'archived'"
+                [class.text-[var(--text-dim)]]="post.status === 'archived'"
+              >
+                {{ post.status }}
+              </span>
+            </div>
+
+            <div class="font-bold text-xs text-[var(--text-primary)] truncate">
+              {{ post.title }}
+            </div>
+
+            <div class="flex items-center gap-2 text-[10px] text-[var(--text-dim)] pt-0.5">
+              <span>{{ post.views_count }} views</span>
+              <span>•</span>
+              <span>{{ post.likes_count }} likes</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

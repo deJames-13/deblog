@@ -1,0 +1,103 @@
+<div
+  id="app-root-shell"
+  class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] transition-colors duration-150 flex flex-col items-center selection:bg-[var(--accent-terminal)] selection:text-[var(--accent-terminal-contrast)]"
+  [class]="fontClass()"
+>
+  <!-- Toast Notifications Deck -->
+  <app-toast />
+
+  <!-- Global Modals -->
+  <app-help-modal />
+  <app-comment-modal />
+
+  <!-- Content Container: max-w-6xl for guest reading, full-width max-w-full for admin workspace -->
+  <div
+    class="w-full flex-1 flex flex-col justify-between space-y-4 transition-all duration-150"
+    [class]="currentRoute() === 'admin' ? 'max-w-full px-2 sm:px-4 lg:px-6 py-2 sm:py-3' : 'max-w-6xl px-2 sm:px-4 py-3 sm:py-4'"
+  >
+    <!-- Top Header & Search Navigation (Hidden in Zen Mode and Login Screen) -->
+    @if (!zenMode() && currentRoute() !== 'admin-auth') {
+      <app-topbar />
+    }
+
+    <!-- Main Body Switcher -->
+    <main id="main-content-viewport" class="flex-1">
+      <!-- 1. ZEN READING MODE -->
+      @if (zenMode() && currentRoute() === 'post') {
+        <app-zen-reader />
+      } @else if (zenMode() && currentRoute() === 'landing') {
+        <div id="zen-landing-container" class="w-full flex flex-col items-center">
+          <!-- Sticky Zen Controls Bar for Landing Page -->
+          <div class="sticky top-3 z-30 mb-6 flex items-center justify-between gap-3 px-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-mono-bios shadow-md max-w-4xl w-full">
+            <button
+              type="button"
+              (click)="toggleZenMode()"
+              class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] transition-colors cursor-pointer text-[11px]"
+            >
+              <svg lucideMinimize2 class="w-3.5 h-3.5"></svg>
+              <span>EXIT ZEN [ESC]</span>
+            </button>
+
+            <div class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider hidden sm:block">
+              ZEN MODE • DISTRACTION-FREE VIEW
+            </div>
+
+            <button
+              type="button"
+              (click)="openCommentModal()"
+              class="flex items-center gap-1.5 px-2.5 py-0.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] hover:text-[var(--accent-terminal)] transition-colors cursor-pointer text-[11px]"
+              title="Open comments section"
+            >
+              <svg lucideMessageSquare class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+              <span>COMMENTS</span>
+            </button>
+          </div>
+
+          <!-- Distraction-free full-width reading column -->
+          <div class="w-full max-w-4xl">
+            <app-landing-view />
+          </div>
+        </div>
+      } @else if (currentRoute() === 'admin-auth') {
+        <!-- 2. ADMIN AUTHENTICATION -->
+        <app-admin-auth />
+      } @else if (currentRoute() === 'admin') {
+        <!-- 3. ADMIN DASHBOARD SUITE -->
+        @if (isAdmin()) {
+          <app-admin-layout />
+        } @else {
+          <app-admin-auth />
+        }
+      } @else {
+        <!-- 4. STANDARD GUEST VIEWS (LANDING & POST VIEW) -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          <!-- Sidebar (Tablet/Desktop 4-cols, Toggleable) -->
+          <div
+            [class]="sidebarOpen() ? 'md:col-span-4 lg:col-span-4 w-full transition-all duration-200' : 'hidden'"
+          >
+            <app-sidebar />
+          </div>
+
+          <!-- Main Content (8-cols when sidebar open, full 12-cols when sidebar closed) -->
+          <div
+            [class]="(sidebarOpen() ? 'md:col-span-8 lg:col-span-8' : 'md:col-span-12 lg:col-span-12') + ' col-span-1 transition-all duration-200'"
+          >
+            @if (currentRoute() === 'post') {
+              <app-post-detail-view />
+            } @else {
+              <app-landing-view />
+            }
+          </div>
+        </div>
+      }
+    </main>
+
+    <!-- Unified Bottom Footer (Hidden in Zen, Admin, or Login screen) -->
+    @if (!zenMode() && currentRoute() !== 'admin' && currentRoute() !== 'admin-auth') {
+      <app-footer />
+    }
+
+    <!-- F-Key Navigation Bar (Unified width matching content, anchored at bottom) -->
+    <app-fkey-bar />
+  </div>
+</div>

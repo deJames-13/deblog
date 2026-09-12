@@ -1,0 +1,70 @@
+@if (toasts().length > 0) {
+  <div
+    id="toast-container"
+    class="fixed bottom-14 right-4 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
+  >
+    @for (toast of visibleToasts(); track toast.id; let idx = $index) {
+      @let isOldest = idx === 0;
+      @let hasBacklog = isOldest && extraCount() > 0;
+
+      <div class="relative w-full">
+        @if (hasBacklog) {
+          @if (extraCount() > 1) {
+            <div
+              class="absolute -top-2 left-2.5 right-2.5 h-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] opacity-40 shadow-xs select-none pointer-events-none"
+              aria-hidden="true"
+            ></div>
+          }
+          <div
+            class="absolute -top-1 left-1.5 right-1.5 h-full bg-[var(--bg-surface)] border border-[var(--border-color)] opacity-70 shadow-xs select-none pointer-events-none"
+            aria-hidden="true"
+          ></div>
+        }
+
+        <div
+          [id]="toast.id"
+          class="relative pointer-events-auto flex items-start gap-3 p-3 text-xs border font-mono-bios bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-color)] shadow-md transition-all"
+          [class.border-t-[var(--accent-terminal)]]="hasBacklog"
+        >
+          @if (hasBacklog) {
+            <div
+              class="absolute -top-2.5 right-3 px-1.5 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-mono-bios font-bold text-[9px] border border-black/30 shadow-sm flex items-center gap-1 z-10 select-none"
+              [title]="extraCount() + ' older notification(s) queued in stack'"
+            >
+              <svg lucideLayers class="w-2.5 h-2.5"></svg>
+              <span>+{{ extraCount() }}</span>
+            </div>
+          }
+
+          @if (toast.type === 'success') {
+            <svg lucideCheckCircle2 class="w-4 h-4 text-[var(--accent-terminal)] shrink-0 mt-0.5"></svg>
+          } @else if (toast.type === 'warning') {
+            <svg lucideAlertTriangle class="w-4 h-4 text-[var(--accent-orange)] shrink-0 mt-0.5"></svg>
+          } @else if (toast.type === 'error') {
+            <svg lucideAlertCircle class="w-4 h-4 text-[var(--accent-fkey)] shrink-0 mt-0.5"></svg>
+          } @else {
+            <svg lucideInfo class="w-4 h-4 text-[var(--accent-blue)] shrink-0 mt-0.5"></svg>
+          }
+
+          <div class="flex-1 leading-relaxed min-w-0 pr-1">
+            <span class="font-bold uppercase tracking-wider block mb-0.5 opacity-70 text-[10px]">
+              [{{ toast.type | uppercase }}]
+            </span>
+            <div class="break-words">
+              {{ toast.message }}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            (click)="removeToast(toast.id)"
+            class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0"
+            aria-label="Close notification"
+          >
+            <svg lucideX class="w-3.5 h-3.5"></svg>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

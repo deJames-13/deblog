@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "angular-architect": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/angular-architect/SKILL.md",
+      "computedHash": "d93b695494c81c076a7c837007762f6e04b204ee19eccd7ff77969ff76835dfd"
+    },
+    "angular-developer": {
+      "source": "angular/skills",
+      "sourceType": "github",
+      "skillPath": "angular-developer/SKILL.md",
+      "computedHash": "0850aa966b6a7da1151daa9d0ef2081bf397f052573a35c1643fb92b948f0f00"
+    },
+    "angular-new-app": {
+      "source": "angular/skills",
+      "sourceType": "github",
+      "skillPath": "angular-new-app/SKILL.md",
+      "computedHash": "49bd84ab08bd3498c52f476bed48fbb942dc6dbc0925607e84549adbed34bccf"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "9cdbb4b8f7a3aeaef82e6230c9e823500d4a8a1214c726cf342cf9829d34fc7d"
+    },
+    "tailwind-file-first-vsa": {
+      "source": "deJames-13/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tailwind-file-first-vsa/SKILL.md",
+      "computedHash": "3de37c854a2c77bed5e6e9a1061345653e3bc9c203f0ce76261a75e6915d05ba"
+    },
+    "vertical-slice-architect": {
+      "source": "deJames-13/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vertical-slice-architect/SKILL.md",
+      "computedHash": "b4bd94f75ec5a782cb86a8d7bcdb32b97eff0e0f2a4a60c7e6a8be98f665c319"
+    }
+  }
+}

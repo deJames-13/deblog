@@ -1,0 +1,109 @@
+<footer
+  id="site-footer"
+  class="w-full border border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] font-mono-bios text-xs p-4 sm:p-6 shadow-sm space-y-4"
+>
+  <!-- 3-Column Footer Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5 border-b border-[var(--border-subtle)] pb-5">
+    <!-- Column 1: Identity & Author -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 font-bold text-[var(--text-primary)]">
+        <img
+          [src]="logoUrl()"
+          alt="deblog logo"
+          class="w-5 h-5 object-contain"
+        />
+        <span class="text-sm font-extrabold normal-case tracking-tight">
+          <span class="text-[var(--accent-terminal)] font-black">de</span>blog
+        </span>
+      </div>
+      <p class="text-[11px] text-[var(--text-muted)] leading-relaxed">
+        Technical documentation written by
+        <span class="text-[var(--text-primary)] font-bold">{{ profile().name }}</span>.
+      </p>
+      <div class="flex items-center gap-2 text-[10px] text-[var(--text-dim)]">
+        <span class="flex items-center gap-1">
+          <svg lucideMapPin class="w-3 h-3"></svg>
+          {{ profile().location.replace('/', '•') }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Column 2: Contact Information -->
+    <div class="space-y-2">
+      <div class="font-bold uppercase tracking-wider text-[var(--text-primary)] text-xs">
+        CONTACT
+      </div>
+      <div class="space-y-1 text-[11px]">
+        <div class="flex items-center gap-1.5 text-[var(--text-muted)]">
+          <svg lucideMail class="w-3.5 h-3.5 text-[var(--accent-blue)]"></svg>
+          <a
+            [href]="'mailto:' + profile().email"
+            class="hover:text-[var(--accent-terminal)] hover:underline"
+          >
+            {{ profile().email }}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 3: Social & System State -->
+    <div class="space-y-2">
+      <div class="font-bold uppercase tracking-wider text-[var(--text-primary)] text-xs">
+        SOCIAL
+      </div>
+      <div class="flex flex-wrap gap-2 text-[11px]">
+        @if (profile().social_links.github) {
+          <a
+            [href]="profile().social_links.github"
+            target="_blank"
+            rel="noreferrer"
+            class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <app-social-icon name="github" class="w-3 h-3" />
+            <span>GITHUB</span>
+          </a>
+        }
+        @if (profile().social_links.linkedin) {
+          <a
+            [href]="profile().social_links.linkedin"
+            target="_blank"
+            rel="noreferrer"
+            class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <app-social-icon name="linkedin" class="w-3 h-3" />
+            <span>LINKEDIN</span>
+          </a>
+        }
+        @if (profile().social_links.facebook) {
+          <a
+            [href]="profile().social_links.facebook"
+            target="_blank"
+            rel="noreferrer"
+            class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <app-social-icon name="facebook" class="w-3 h-3" />
+            <span>FACEBOOK</span>
+          </a>
+        }
+        @if (profile().social_links.instagram) {
+          <a
+            [href]="profile().social_links.instagram"
+            target="_blank"
+            rel="noreferrer"
+            class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] hover:border-[var(--text-primary)] flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <app-social-icon name="instagram" class="w-3 h-3" />
+            <span>INSTAGRAM</span>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar: Copyright -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-[var(--text-dim)]">
+    <div>
+      © {{ profile().copyright_year }} {{ profile().name }}. All rights reserved.
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,157 @@
+<div id="admin-users-view" class="space-y-4 font-mono-bios text-xs">
+  <!-- Header -->
+  <div class="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+    <div>
+      <h2 class="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
+        USERS
+      </h2>
+    </div>
+
+    <div class="flex items-center gap-2 text-[11px]">
+      <span class="text-[var(--text-dim)]">TOTAL:</span>
+      <span class="font-bold text-[var(--text-primary)] font-mono">{{ users().length }}</span>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div class="p-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+    <div class="flex items-center gap-1 text-[11px]">
+      @for (r of ['all', 'commenter', 'subscriber', 'admin']; track r) {
+        <button
+          type="button"
+          (click)="roleFilter.set($any(r))"
+          class="px-2 py-1 border uppercase cursor-pointer transition-colors"
+          [class.bg-[var(--accent-terminal)]]="roleFilter() === r"
+          [class.text-[var(--accent-terminal-contrast)]]="roleFilter() === r"
+          [class.border-[var(--accent-terminal)]]="roleFilter() === r"
+          [class.font-bold]="roleFilter() === r"
+          [class.bg-[var(--bg-canvas)]]="roleFilter() !== r"
+          [class.text-[var(--text-muted)]]="roleFilter() !== r"
+          [class.border-[var(--border-subtle)]]="roleFilter() !== r"
+          [class.hover:border-[var(--border-color)]]="roleFilter() !== r"
+        >
+          {{ r }}
+        </button>
+      }
+    </div>
+
+    <div class="relative w-full sm:w-64">
+      <svg lucideSearch class="w-3.5 h-3.5 absolute left-2 top-2 text-[var(--text-dim)] pointer-events-none"></svg>
+      <input
+        type="text"
+        placeholder="Search by name or email..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-2 py-1 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)]"
+      />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] overflow-x-auto">
+    <table class="w-full text-left border-collapse text-xs min-w-[640px]">
+      <thead>
+        <tr class="bg-[var(--bg-canvas)] border-b border-[var(--border-color)] text-[10px] text-[var(--text-dim)] uppercase tracking-wider">
+          <th class="p-2.5">User Identity</th>
+          <th class="p-2.5">Role</th>
+          <th class="p-2.5">Comments</th>
+          <th class="p-2.5">Status</th>
+          <th class="p-2.5">Joined</th>
+          <th class="p-2.5">Last Active</th>
+          <th class="p-2.5 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--border-subtle)]">
+        @if (filteredUsers().length === 0) {
+          <tr>
+            <td colspan="7" class="p-8 text-center text-[var(--text-dim)]">
+              No user records match your search.
+            </td>
+          </tr>
+        } @else {
+          @for (user of filteredUsers(); track user.id) {
+            <tr class="hover:bg-[var(--bg-canvas)]/60 transition-colors">
+              <td class="p-2.5">
+                <div class="font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <span>{{ user.name }}</span>
+                  @if (user.role === 'admin') {
+                    <span class="px-1 py-0.2 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] text-[9px] font-bold">
+                      ROOT
+                    </span>
+                  }
+                </div>
+                <div class="text-[10px] text-[var(--text-dim)] flex items-center gap-1 font-mono">
+                  <svg lucideMail class="w-3 h-3 text-[var(--accent-blue)]"></svg>
+                  <span>{{ user.email }}</span>
+                </div>
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap">
+                <span class="px-1.5 py-0.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[10px] uppercase text-[var(--text-muted)]">
+                  {{ user.role }}
+                </span>
+              </td>
+
+              <td class="p-2.5 font-mono text-[11px]">
+                {{ user.comments_count }}
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap">
+                <span
+                  class="px-1.5 py-0.5 uppercase font-bold text-[9px]"
+                  [class.bg-[var(--accent-terminal)]]="user.status === 'active'"
+                  [class.text-[var(--accent-terminal-contrast)]]="user.status === 'active'"
+                  [class.bg-red-500]="user.status === 'banned'"
+                  [class.text-white]="user.status === 'banned'"
+                  [class.bg-[var(--accent-orange)]]="user.status === 'flagged'"
+                  [class.text-[var(--accent-orange-contrast)]]="user.status === 'flagged'"
+                >
+                  {{ user.status }}
+                </span>
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap text-[10px] text-[var(--text-dim)] font-mono">
+                {{ user.created_at.slice(0, 10) }}
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap text-[10px] text-[var(--text-dim)] font-mono">
+                {{ user.last_active_at.slice(0, 10) }}
+              </td>
+
+              <td class="p-2.5 text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-1">
+                  @if (user.role !== 'admin') {
+                    <button
+                      type="button"
+                      (click)="toggleStatus(user.id)"
+                      class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[10px] cursor-pointer"
+                      [title]="user.status === 'active' ? 'Ban User' : 'Unban User'"
+                    >
+                      @if (user.status === 'active') {
+                        <span class="text-[var(--accent-fkey)]">BAN</span>
+                      } @else {
+                        <span class="text-[var(--accent-terminal)]">ACTIVATE</span>
+                      }
+                    </button>
+
+                    <button
+                      type="button"
+                      (click)="deleteUser(user.id, user.name)"
+                      class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer"
+                      title="Delete User Record"
+                      aria-label="Delete User Record"
+                    >
+                      <svg lucideTrash2 class="w-3.5 h-3.5"></svg>
+                    </button>
+                  } @else {
+                    <span class="text-[10px] text-[var(--text-dim)] italic">PROTECTED</span>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

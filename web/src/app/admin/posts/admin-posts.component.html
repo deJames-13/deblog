@@ -1,0 +1,481 @@
+<div id="admin-posts-view" class="space-y-4 font-mono-bios text-xs">
+  @if (!editingPost()) {
+    <!-- 1. Posts List View -->
+    <!-- Header with Tabs and Actions -->
+    <div class="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+      <div>
+        <h2 class="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
+          POSTS
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="startCreate()"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase hover:opacity-90 cursor-pointer"
+        >
+          <svg lucidePlus class="w-3.5 h-3.5"></svg>
+          <span>New Entry</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Tabs & Search Query Input -->
+    <div class="p-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+      <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
+        @for (f of ['all', 'published', 'draft', 'archived', 'hidden']; track f) {
+          @let count = f === 'all' ? posts().length : posts().filter((p) => p.status === f).length;
+          <button
+            type="button"
+            (click)="activeFilter.set($any(f))"
+            class="px-2 py-1 border uppercase whitespace-nowrap cursor-pointer transition-colors"
+            [class.bg-[var(--accent-terminal)]]="activeFilter() === f"
+            [class.text-[var(--accent-terminal-contrast)]]="activeFilter() === f"
+            [class.border-[var(--accent-terminal)]]="activeFilter() === f"
+            [class.font-bold]="activeFilter() === f"
+            [class.bg-[var(--bg-canvas)]]="activeFilter() !== f"
+            [class.text-[var(--text-muted)]]="activeFilter() !== f"
+            [class.border-[var(--border-subtle)]]="activeFilter() !== f"
+            [class.hover:border-[var(--border-color)]]="activeFilter() !== f"
+          >
+            <span>{{ f }}</span>
+            <span class="opacity-75 font-mono ml-1">({{ count }})</span>
+          </button>
+        }
+      </div>
+
+      <div class="relative w-full sm:w-64">
+        <svg lucideSearch class="w-3.5 h-3.5 absolute left-2 top-2 text-[var(--text-dim)] pointer-events-none"></svg>
+        <input
+          type="text"
+          placeholder="Filter posts by title or slug..."
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-2 py-1 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)]"
+        />
+      </div>
+    </div>
+
+    <!-- Posts Table -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs min-w-[700px]">
+        <thead>
+          <tr class="bg-[var(--bg-canvas)] border-b border-[var(--border-color)] text-[10px] text-[var(--text-dim)] uppercase tracking-wider">
+            <th class="p-2.5">Title / Slug</th>
+            <th class="p-2.5">Category</th>
+            <th class="p-2.5">Status</th>
+            <th class="p-2.5">Metrics</th>
+            <th class="p-2.5">Date</th>
+            <th class="p-2.5 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[var(--border-subtle)]">
+          @if (filteredPosts().length === 0) {
+            <tr>
+              <td colspan="6" class="p-8 text-center text-[var(--text-dim)]">
+                No entries match the filter criteria.
+              </td>
+            </tr>
+          } @else {
+            @for (post of filteredPosts(); track post.id) {
+              <tr class="hover:bg-[var(--bg-canvas)]/60 transition-colors">
+                <td class="p-2.5">
+                  <div class="font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <span>{{ post.title }}</span>
+                    @if (post.is_featured) {
+                      <span class="px-1 py-0.2 bg-[var(--accent-orange)] text-[var(--accent-orange-contrast)] text-[9px] font-bold">
+                        FEATURED
+                      </span>
+                    }
+                  </div>
+                  <div class="text-[10px] text-[var(--text-dim)] font-mono">
+                    /{{ post.slug }}
+                  </div>
+                </td>
+
+                <td class="p-2.5 whitespace-nowrap">
+                  <span class="px-1.5 py-0.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[10px] text-[var(--accent-terminal)]">
+                    {{ post.category }}
+                  </span>
+                </td>
+
+                <td class="p-2.5 whitespace-nowrap">
+                  <span
+                    class="px-1.5 py-0.5 uppercase font-bold text-[9px]"
+                    [class.bg-[var(--accent-terminal)]]="post.status === 'published'"
+                    [class.text-[var(--accent-terminal-contrast)]]="post.status === 'published'"
+                    [class.bg-[var(--accent-orange)]]="post.status === 'draft'"
+                    [class.text-[var(--accent-orange-contrast)]]="post.status === 'draft'"
+                    [class.bg-[var(--bg-surface)]]="post.status === 'archived' || post.status === 'hidden'"
+                    [class.text-[var(--text-dim)]]="post.status === 'archived' || post.status === 'hidden'"
+                  >
+                    {{ post.status }}
+                  </span>
+                </td>
+
+                <td class="p-2.5 whitespace-nowrap font-mono text-[10px] text-[var(--text-dim)]">
+                  <div>{{ post.views_count }} views</div>
+                  <div>{{ post.likes_count }} likes</div>
+                </td>
+
+                <td class="p-2.5 whitespace-nowrap text-[10px] text-[var(--text-dim)]">
+                  {{ post.created_at.slice(0, 10) }}
+                </td>
+
+                <td class="p-2.5 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      (click)="startEdit(post)"
+                      class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] cursor-pointer"
+                      title="Edit Entry"
+                    >
+                      <svg lucideEdit class="w-3 h-3"></svg>
+                    </button>
+
+                    @if (post.status === 'published') {
+                      <button
+                        type="button"
+                        (click)="updatePostStatus(post.id, 'draft')"
+                        class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-orange)] text-[var(--accent-orange)] cursor-pointer"
+                        title="Unpublish (Save as Draft)"
+                      >
+                        <svg lucideEyeOff class="w-3 h-3"></svg>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="updatePostStatus(post.id, 'published')"
+                        class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--accent-terminal)] cursor-pointer"
+                        title="Publish Immediately"
+                      >
+                        <svg lucideEye class="w-3 h-3"></svg>
+                      </button>
+                    }
+
+                    <button
+                      type="button"
+                      (click)="viewLive(post.id)"
+                      class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+                      title="View Live"
+                    >
+                      <svg lucideExternalLink class="w-3 h-3"></svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      (click)="deletePost(post.id, post.title)"
+                      class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer"
+                      title="Delete Entry"
+                    >
+                      <svg lucideTrash2 class="w-3 h-3"></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <!-- 2. Full Post Editor Mode -->
+    @let ep = editingPost()!;
+
+    <div id="admin-post-editor" class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-6 shadow-md space-y-4">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+        <div class="flex items-center gap-2">
+          <svg lucideEdit class="w-4 h-4 text-[var(--accent-terminal)]"></svg>
+          <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
+            {{ isCreating() ? 'CREATE TECHNICAL ESSAY' : 'EDIT ESSAY: ' + ep.title }}
+          </h3>
+        </div>
+
+        <button
+          type="button"
+          (click)="cancelEdit()"
+          class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+        >
+          <svg lucideX class="w-4 h-4"></svg>
+        </button>
+      </div>
+
+      <!-- Editor Fields Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Title -->
+        <div class="sm:col-span-2">
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Post Title <span class="text-[var(--accent-fkey)]">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="e.g. Modern Architecture with PostgreSQL"
+            [value]="ep.title || ''"
+            (input)="editingPost.update((p) => p ? { ...p, title: $any($event.target).value } : null)"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <!-- Subtitle -->
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Subtitle / Deck
+          </label>
+          <input
+            type="text"
+            placeholder="Brief secondary hook..."
+            [value]="ep.subtitle || ''"
+            (input)="editingPost.update((p) => p ? { ...p, subtitle: $any($event.target).value } : null)"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Category
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Power Platform, Full Stack, UI/UX"
+            [value]="ep.category || ''"
+            (input)="editingPost.update((p) => p ? { ...p, category: $any($event.target).value } : null)"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Tags (Comma separated)
+          </label>
+          <input
+            type="text"
+            placeholder="Architecture, TypeScript, Dataverse"
+            [value]="tagsInput()"
+            (input)="tagsInput.set($any($event.target).value)"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          />
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Publish Status
+          </label>
+          <select
+            [value]="ep.status || 'draft'"
+            (change)="editingPost.update((p) => p ? { ...p, status: $any($event.target).value } : null)"
+            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+          >
+            <option value="draft">Draft (Work in progress)</option>
+            <option value="published">Published (Public to guests)</option>
+            <option value="hidden">Hidden (Unlisted)</option>
+            <option value="archived">Archived (Read only)</option>
+          </select>
+        </div>
+
+        <!-- Cover Image URL with Media Picker trigger -->
+        <div class="sm:col-span-2">
+          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1 font-semibold">
+            Cover Image URL
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="https://images.unsplash.com/..."
+              [value]="ep.cover_image || ''"
+              (input)="editingPost.update((p) => p ? { ...p, cover_image: $any($event.target).value } : null)"
+              class="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
+            />
+            <button
+              type="button"
+              (click)="showMediaPicker.set(true)"
+              class="px-3 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-xs cursor-pointer flex items-center gap-1 shrink-0"
+            >
+              <svg lucideImage class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+              <span>Browse Media</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Featured Checkbox -->
+        <div class="sm:col-span-2 flex items-center gap-2 pt-1">
+          <input
+            id="featured-checkbox"
+            type="checkbox"
+            [checked]="ep.is_featured || false"
+            (change)="editingPost.update((p) => p ? { ...p, is_featured: $any($event.target).checked } : null)"
+            class="accent-[var(--accent-terminal)] cursor-pointer"
+          />
+          <label for="featured-checkbox" class="text-xs cursor-pointer select-none">
+            Highlight as Featured Article (Shown prominently on index)
+          </label>
+        </div>
+      </div>
+
+      <!-- Markdown Content Editor with Toolbar -->
+      <div class="border border-[var(--border-color)] bg-[var(--bg-canvas)]">
+        <div class="flex items-center justify-between px-2 py-1.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <div class="flex items-center gap-1 overflow-x-auto">
+            <button
+              type="button"
+              (click)="insertMarkdown('**', '**')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Bold"
+            >
+              <svg lucideBold class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('*', '*')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Italic"
+            >
+              <svg lucideItalic class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('## ')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Heading 2"
+            >
+              <svg lucideHeading2 class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('### ')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Heading 3"
+            >
+              <svg lucideHeading3 class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('```typescript\n', '\n```')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Code Block"
+            >
+              <svg lucideCode class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('> ')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="Blockquote"
+            >
+              <svg lucideQuote class="w-3.5 h-3.5"></svg>
+            </button>
+            <button
+              type="button"
+              (click)="insertMarkdown('- ')"
+              class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent cursor-pointer"
+              title="List"
+            >
+              <svg lucideList class="w-3.5 h-3.5"></svg>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="editorPreview.set(!editorPreview())"
+              class="px-2 py-0.5 text-[10px] uppercase border border-[var(--border-color)] hover:bg-[var(--bg-highlight)] cursor-pointer"
+            >
+              {{ editorPreview() ? 'EDITOR' : 'PREVIEW' }}
+            </button>
+            <span class="text-[10px] text-[var(--text-dim)]">
+              {{ (ep.content || '').length }} chars
+            </span>
+          </div>
+        </div>
+
+        @if (!editorPreview()) {
+          <textarea
+            id="post-content-editor"
+            rows="16"
+            placeholder="Write full article body using Markdown..."
+            [value]="ep.content || ''"
+            (input)="editingPost.update((p) => p ? { ...p, content: $any($event.target).value } : null)"
+            class="w-full bg-transparent p-3 text-xs text-[var(--text-primary)] focus:outline-none resize-y leading-relaxed font-mono-bios"
+          ></textarea>
+        } @else {
+          <div class="p-4 min-h-[300px] bg-[var(--bg-surface)]">
+            <app-markdown-renderer [content]="ep.content || ''" />
+          </div>
+        }
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]">
+        <button
+          type="button"
+          (click)="cancelEdit()"
+          class="px-4 py-1.5 border border-[var(--border-color)] hover:bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+        >
+          Cancel
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="savePost(false)"
+            class="px-4 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-xs cursor-pointer"
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            (click)="savePost(true)"
+            class="px-4 py-1.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase tracking-wider hover:opacity-90 cursor-pointer"
+          >
+            Publish Live
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Media Asset Picker Modal -->
+  @if (showMediaPicker()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs font-mono-bios"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-canvas)] border-b border-[var(--border-color)] text-xs">
+          <span class="font-bold uppercase tracking-wider">Select Media Asset</span>
+          <button
+            type="button"
+            (click)="showMediaPicker.set(false)"
+            class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+          >
+            <svg lucideX class="w-4 h-4"></svg>
+          </button>
+        </div>
+
+        <div class="p-3 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3">
+          @for (item of media(); track item.id) {
+            <div
+              (click)="selectMediaForCover(item.url)"
+              class="border border-[var(--border-subtle)] hover:border-[var(--accent-terminal)] cursor-pointer bg-[var(--bg-canvas)] p-2 space-y-1 group"
+            >
+              <div class="h-24 w-full overflow-hidden bg-black/40">
+                <img [src]="item.url" [alt]="item.alt_text" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+              </div>
+              <div class="text-[10px] text-[var(--text-primary)] truncate font-semibold">
+                {{ item.filename }}
+              </div>
+              <div class="text-[9px] text-[var(--text-dim)]">
+                {{ item.dimensions }} • {{ item.file_size_kb }}KB
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

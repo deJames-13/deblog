@@ -1,0 +1,85 @@
+<div
+  id="admin-auth-screen"
+  class="w-full flex items-center justify-center py-16 px-3 font-mono-bios text-xs"
+>
+  <div class="w-full max-w-md bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-xl">
+    <!-- BIOS Header -->
+    <div class="px-3 py-2 bg-[var(--bg-canvas)] border-b border-[var(--border-color)] flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <svg lucideLock class="w-4 h-4 text-[var(--accent-fkey)]"></svg>
+        <h2 class="font-bold uppercase tracking-wider">
+          ADMIN
+        </h2>
+      </div>
+      <button
+        type="button"
+        (click)="goBack()"
+        class="text-[var(--text-dim)] hover:text-[var(--text-primary)] flex items-center gap-1.5 cursor-pointer transition-colors"
+      >
+        <svg lucideArrowLeft class="w-3.5 h-3.5"></svg>
+        <span>Go Back</span>
+      </button>
+    </div>
+
+    <!-- Auth Body -->
+    <form (submit)="handleLogin($event)" class="p-6 space-y-4">
+      <div class="p-3 border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+        <div class="flex items-center gap-1.5 font-bold text-[var(--accent-terminal)] uppercase text-[11px]">
+          <svg lucideTerminal class="w-3.5 h-3.5"></svg>
+          <span>AUTHORIZED PERSON ONLY</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="admin-auth-username" class="block text-[10px] uppercase text-[var(--text-dim)] tracking-wider mb-1.5 font-semibold">
+          Username
+        </label>
+        <div class="relative">
+          <svg lucideUser class="w-4 h-4 absolute left-2.5 top-2.5 text-[var(--text-dim)]"></svg>
+          <input
+            id="admin-auth-username"
+            type="text"
+            required
+            placeholder="Enter admin username..."
+            [value]="username()"
+            (input)="username.set($any($event.target).value)"
+            class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-8 pr-3 py-2 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)] placeholder:text-[var(--text-dim)]"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="admin-auth-password" class="block text-[10px] uppercase text-[var(--text-dim)] tracking-wider mb-1.5 font-semibold">
+          Password
+        </label>
+        <div class="relative">
+          <svg lucideKey class="w-4 h-4 absolute left-2.5 top-2.5 text-[var(--text-dim)]"></svg>
+          <input
+            id="admin-auth-password"
+            type="password"
+            required
+            placeholder="Enter security key or password..."
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-8 pr-3 py-2 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)] placeholder:text-[var(--text-dim)]"
+          />
+        </div>
+      </div>
+
+      @if (errorMsg()) {
+        <div class="p-2 border border-[var(--accent-fkey)] bg-[var(--accent-fkey)]/10 text-[var(--accent-fkey)] text-[11px]">
+          {{ errorMsg() }}
+        </div>
+      }
+
+      <div class="pt-2">
+        <button
+          type="submit"
+          class="w-full px-4 py-2.5 font-bold uppercase tracking-wider border border-[var(--accent-terminal)] bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] hover:opacity-90 cursor-pointer text-xs transition-opacity"
+        >
+          Login
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

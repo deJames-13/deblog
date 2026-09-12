@@ -1,0 +1,53 @@
+@if (totalPages() > 1) {
+  <nav
+    id="landing-pagination"
+    aria-label="Articles Pagination"
+    class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 flex flex-wrap items-center justify-between gap-2 font-mono-bios text-xs shadow-sm"
+  >
+    <!-- Previous Page Button -->
+    <button
+      type="button"
+      (click)="pageChange.emit(currentPage() - 1)"
+      [disabled]="currentPage() <= 1"
+      class="flex items-center gap-1 px-2.5 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+      aria-label="Go to previous page"
+    >
+      <svg lucideChevronLeft class="w-3.5 h-3.5"></svg>
+      <span>PREV</span>
+    </button>
+
+    <!-- Page Number Buttons -->
+    <div class="flex items-center gap-1">
+      @for (page of pageNumbers(); track page) {
+        <button
+          type="button"
+          (click)="pageChange.emit(page)"
+          class="w-7 h-7 flex items-center justify-center border text-xs cursor-pointer"
+          [class.bg-[var(--accent-terminal)]]="currentPage() === page"
+          [class.text-[var(--accent-terminal-contrast)]]="currentPage() === page"
+          [class.border-[var(--accent-terminal)]]="currentPage() === page"
+          [class.font-bold]="currentPage() === page"
+          [class.bg-[var(--bg-canvas)]]="currentPage() !== page"
+          [class.text-[var(--text-primary)]]="currentPage() !== page"
+          [class.border-[var(--border-color)]]="currentPage() !== page"
+          [class.hover:border-[var(--text-primary)]]="currentPage() !== page"
+          [attr.aria-current]="currentPage() === page ? 'page' : null"
+        >
+          {{ page }}
+        </button>
+      }
+    </div>
+
+    <!-- Next Page Button -->
+    <button
+      type="button"
+      (click)="pageChange.emit(currentPage() + 1)"
+      [disabled]="currentPage() >= totalPages()"
+      class="flex items-center gap-1 px-2.5 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+      aria-label="Go to next page"
+    >
+      <span>NEXT</span>
+      <svg lucideChevronRight class="w-3.5 h-3.5"></svg>
+    </button>
+  </nav>
+}

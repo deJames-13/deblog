@@ -1,0 +1,3 @@
+interface:
+  display_name: "Vertical Slice Architecture"
+  short_description: "Enforces strict vertical slice architecture, highly granular file-based Single Responsibility Principle (SRP), and domain-driven folder structures before writing any code."

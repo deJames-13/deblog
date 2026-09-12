@@ -1,0 +1,38 @@
+<div
+  id="fkey-bottom-bar"
+  class="w-full bg-[var(--bg-canvas)] border-t border-[var(--border-color)] py-1 px-1 sm:px-2 font-mono-bios select-none"
+>
+  <div class="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+    <div class="flex flex-wrap items-center gap-1 w-full sm:w-auto">
+      @for (k of keys(); track k.key) {
+        <button
+          type="button"
+          [id]="'fkey-btn-' + k.key.toLowerCase()"
+          (click)="k.action()"
+          class="flex items-center gap-1 px-1.5 py-1 transition-colors border cursor-pointer"
+          [class.bg-[var(--accent-terminal)]]="k.active"
+          [class.text-white]="k.active"
+          [class.border-[var(--accent-terminal)]]="k.active"
+          [class.font-bold]="k.active"
+          [class.bg-[var(--bg-surface)]]="!k.active"
+          [class.text-[var(--text-primary)]]="!k.active"
+          [class.border-[var(--border-color)]]="!k.active"
+          [class.hover:border-[var(--text-primary)]]="!k.active"
+          [class.hover:bg-[var(--bg-highlight)]]="!k.active"
+          [title]="'Press [' + k.key + '] or click'"
+        >
+          <span
+            class="font-bold"
+            [class.text-white]="k.active"
+            [class.text-[var(--accent-fkey)]]="!k.active"
+            [class.opacity-95]="!k.active"
+          >[{{ k.key }}]</span>
+          <span
+            class="truncate"
+            [class.text-white]="k.active"
+          >{{ k.label }}</span>
+        </button>
+      }
+    </div>
+  </div>
+</div>

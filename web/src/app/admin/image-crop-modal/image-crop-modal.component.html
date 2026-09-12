@@ -1,0 +1,197 @@
+@if (isOpen()) {
+  @let dims = cropBoxDimensions();
+  @let render = renderedDimensions();
+
+  <div
+    id="image-crop-modal-overlay"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-xs font-mono-bios"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="crop-modal-heading"
+  >
+    <div class="w-full max-w-lg bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-2xl overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="px-4 py-2.5 bg-[var(--bg-canvas)] border-b border-[var(--border-color)] flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--accent-terminal)]">
+          <svg lucideMove class="w-3.5 h-3.5"></svg>
+          <h3 id="crop-modal-heading">{{ modalTitle() }}</h3>
+        </div>
+        <button
+          type="button"
+          (click)="closeModal.emit()"
+          class="text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+          aria-label="Close modal"
+        >
+          <svg lucideX class="w-4 h-4"></svg>
+        </button>
+      </div>
+
+      <!-- Viewport / Crop Work Area -->
+      <div
+        class="relative bg-[#0d0d0d] overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+        [style.height.px]="containerHeight"
+        (mousedown)="handleMouseDown($event)"
+        (wheel)="handleWheel($event)"
+      >
+        <!-- The Image inside workspace -->
+        @if (imageLoaded()) {
+          <div
+            [style.position]="'absolute'"
+            [style.left]="'50%'"
+            [style.top]="'50%'"
+            [style.transform]="'translate(calc(-50% + ' + offset().x + 'px), calc(-50% + ' + offset().y + 'px)) rotate(' + rotation() + 'deg)'"
+            [style.width.px]="render.width"
+            [style.height.px]="render.height"
+            [style.transition]="isDragging() ? 'none' : 'transform 0.1s ease-out'"
+            [style.pointerEvents]="'none'"
+          >
+            <img
+              [src]="imageSrc()"
+              alt="Crop preview"
+              class="w-full h-full object-contain pointer-events-none"
+              draggable="false"
+            />
+          </div>
+        } @else {
+          <div class="text-xs text-[var(--text-dim)] flex items-center gap-2">
+            <svg lucideRefreshCw class="w-4 h-4 animate-spin text-[var(--accent-terminal)]"></svg>
+            <span>Loading image asset...</span>
+          </div>
+        }
+
+        <!-- Darkened Mask outside crop box -->
+        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <svg width="100%" height="100%" class="absolute inset-0 w-full h-full pointer-events-none">
+            <defs>
+              <mask id="crop-mask">
+                <rect width="100%" height="100%" fill="white" />
+                <rect
+                  [attr.x]="'calc(50% - ' + (dims.width / 2) + 'px)'"
+                  [attr.y]="'calc(50% - ' + (dims.height / 2) + 'px)'"
+                  [attr.width]="dims.width"
+                  [attr.height]="dims.height"
+                  fill="black"
+                />
+              </mask>
+            </defs>
+            <rect width="100%" height="100%" fill="rgba(0, 0, 0, 0.65)" mask="url(#crop-mask)" />
+          </svg>
+
+          <!-- Crop Box Border & Rule of Thirds Guide Grid -->
+          <div
+            [style.width.px]="dims.width"
+            [style.height.px]="dims.height"
+            class="relative border-2 border-[var(--accent-terminal)] pointer-events-none shadow-sm"
+          >
+            <!-- Rule of thirds lines -->
+            <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-40">
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div class="border-r border-b border-[var(--accent-terminal)]"></div>
+              <div></div>
+            </div>
+
+            <!-- Aspect ratio badge -->
+            <span class="absolute -top-5 left-0 px-1.5 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] text-[9px] font-bold uppercase tracking-wider">
+              {{ aspectRatio() === 1 ? '1:1 Square Ratio' : aspectRatio() + ':1 Wide Banner' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Controls Bar -->
+      <div class="p-3 bg-[var(--bg-canvas)] border-t border-[var(--border-subtle)] space-y-2.5 text-xs">
+        <!-- Zoom Slider -->
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] uppercase text-[var(--text-dim)] flex items-center gap-1 w-14">
+            <svg lucideZoomIn class="w-3 h-3"></svg>
+            <span>Zoom</span>
+          </span>
+          <button
+            type="button"
+            (click)="zoomOut()"
+            class="text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+            aria-label="Zoom out"
+          >
+            <svg lucideZoomOut class="w-3.5 h-3.5"></svg>
+          </button>
+          <input
+            type="range"
+            min="0.6"
+            max="3"
+            step="0.05"
+            [value]="zoom()"
+            (input)="zoom.set($any($event.target).valueAsNumber)"
+            class="flex-1 accent-[var(--accent-terminal)] h-1 bg-[var(--bg-subtle)] cursor-pointer"
+          />
+          <button
+            type="button"
+            (click)="zoomIn()"
+            class="text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+            aria-label="Zoom in"
+          >
+            <svg lucideZoomIn class="w-3.5 h-3.5"></svg>
+          </button>
+          <span class="text-[10px] font-mono w-10 text-right text-[var(--text-dim)]">
+            {{ Math.round(zoom() * 100) }}%
+          </span>
+        </div>
+
+        <!-- Quick Actions (Rotate, Reset) -->
+        <div class="flex items-center justify-between pt-1 border-t border-[var(--border-subtle)]">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="rotate()"
+              class="px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] text-[11px] cursor-pointer flex items-center gap-1"
+              title="Rotate image 90 degrees"
+            >
+              <svg lucideRotateCw class="w-3 h-3 text-[var(--accent-orange)]"></svg>
+              <span>Rotate 90°</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="reset()"
+              class="px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-dim)] hover:text-[var(--text-primary)] text-[11px] cursor-pointer flex items-center gap-1"
+              title="Reset crop position and zoom"
+            >
+              <svg lucideRefreshCw class="w-3 h-3"></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div class="text-[10px] text-[var(--text-dim)] hidden sm:block">
+            Drag to reposition • Scroll to zoom
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="p-3 bg-[var(--bg-surface)] border-t border-[var(--border-color)] flex items-center justify-end gap-2">
+        <button
+          type="button"
+          (click)="closeModal.emit()"
+          class="px-3 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs cursor-pointer"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="applyCrop()"
+          [disabled]="!imageLoaded()"
+          class="px-4 py-1.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase tracking-wider hover:opacity-90 cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <svg lucideCheck class="w-4 h-4"></svg>
+          <span>Apply Crop</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

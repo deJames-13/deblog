@@ -1,0 +1,112 @@
+@if (isOpen()) {
+  <div
+    id="bios-help-overlay"
+    (click)="close()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-[1px] font-mono-bios"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="help-modal-title"
+  >
+    <div
+      id="bios-help-dialog"
+      (click)="$event.stopPropagation()"
+      class="w-full max-w-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-2xl flex flex-col max-h-[90vh]"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-canvas)] border-b border-[var(--border-color)] text-xs">
+        <div class="flex items-center gap-2">
+          <svg lucideTerminal class="w-4 h-4 text-[var(--accent-terminal)]"></svg>
+          <h3 id="help-modal-title" class="font-bold tracking-wider">KEYBOARD SHORTCUTS</h3>
+        </div>
+        <button
+          type="button"
+          (click)="close()"
+          class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer"
+          aria-label="Close Help"
+        >
+          <svg lucideX class="w-4 h-4"></svg>
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-4 overflow-y-auto space-y-4 text-xs">
+        <!-- Section: Overview -->
+        <div class="border border-[var(--border-subtle)] p-3 bg-[var(--bg-canvas)]">
+          <h4 class="font-bold text-[var(--accent-terminal)] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <svg lucideCpu class="w-3.5 h-3.5"></svg>
+            Philosophy: Minimalist BIOS-Inspired Publishing
+          </h4>
+          <p class="text-[var(--text-muted)] leading-relaxed">
+            This blog is designed around computational utility, zero border radii, disciplined monochrome accents,
+            and keyboard-first ergonomics. It strips away modern web clutter (no floating bubbles, no gradients,
+            no unrequested promotional cards) to deliver pristine, high-legibility engineering essays.
+          </p>
+        </div>
+
+        <!-- Section: Keyboard Navigation -->
+        <div>
+          <h4 class="font-bold text-[var(--accent-orange)] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <svg lucideTerminal class="w-3.5 h-3.5"></svg>
+            Hardware-Inspired F-Key Navigation
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            @for (s of shortcuts; track s.key) {
+              <div class="flex items-start gap-2 p-2 border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                <span class="px-1.5 py-0.5 bg-[var(--bg-surface)] text-[var(--accent-fkey)] font-bold border border-[var(--border-color)] shrink-0">
+                  [{{ s.key }}]
+                </span>
+                <span class="text-[var(--text-muted)] text-[11px] leading-tight">
+                  {{ s.desc }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Section: Typography & Themes -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="border border-[var(--border-subtle)] p-3 bg-[var(--bg-canvas)]">
+            <h5 class="font-bold text-[var(--accent-blue)] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <svg lucidePalette class="w-3.5 h-3.5"></svg>
+              Theme Engine
+            </h5>
+            <p class="text-[var(--text-muted)] text-[11px] leading-relaxed">
+              Four low-strain reading palettes tuned for long study sessions: Night (#3d3d3d), Twilight (#2c2b2b), Sepia (#efdcc4), and Soft Light (#F0EAD6).
+            </p>
+          </div>
+
+          <div class="border border-[var(--border-subtle)] p-3 bg-[var(--bg-canvas)]">
+            <h5 class="font-bold text-[var(--accent-pink)] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <svg lucideType class="w-3.5 h-3.5"></svg>
+              Reading Fonts
+            </h5>
+            <p class="text-[var(--text-muted)] text-[11px] leading-relaxed">
+              Switch seamlessly between clean sans-serif (Roboto), editorial serif (Alice), humanist serif (Noto Serif), warm book serif (Merriweather), or soft rounded geometry (Comfortaa).
+            </p>
+          </div>
+        </div>
+
+        <!-- Section: Admin & Security -->
+        <div class="border border-[var(--border-subtle)] p-3 bg-[var(--bg-canvas)] flex items-start gap-3">
+          <svg lucideShield class="w-4 h-4 text-[var(--accent-terminal)] shrink-0 mt-0.5"></svg>
+          <div class="text-[11px] text-[var(--text-muted)]">
+            <span class="font-bold text-[var(--text-primary)]">Admin Portal Key: </span>
+            Use key <code class="text-[var(--accent-terminal)] bg-[var(--bg-surface)] px-1 py-0.5 border border-[var(--border-color)]">admin</code> or <code class="text-[var(--accent-terminal)] bg-[var(--bg-surface)] px-1 py-0.5 border border-[var(--border-color)]">bios2026</code> in the [F8] portal to access the content management system, create posts, review comments, and upload media.
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-3 py-2 bg-[var(--bg-canvas)] border-t border-[var(--border-color)] flex items-center justify-between text-[11px]">
+        <span class="text-[var(--text-dim)]">PRESS [ESC] TO CLOSE</span>
+        <button
+          type="button"
+          (click)="close()"
+          class="px-3 py-1 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold hover:opacity-90 cursor-pointer transition-opacity"
+        >
+          ACKNOWLEDGE
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,48 @@
+<div id="landing-view-container" class="space-y-4">
+  <!-- Search Bar & Active Filter Banner (Separated Component) -->
+  <app-search-filter-bar
+    [searchQuery]="searchQuery()"
+    [selectedCategory]="selectedCategory()"
+    [selectedMonth]="selectedMonth()"
+    [totalEntries]="filteredPosts().length"
+    (searchChange)="setSearch($event)"
+    (clearSearch)="clearSearch()"
+    (clearCategory)="clearCategory()"
+    (clearMonth)="clearMonth()"
+    (clearAllFilters)="clearAllFilters()"
+  />
+
+  <!-- Articles List or Empty State -->
+  @if (filteredPosts().length === 0) {
+    <!-- Empty State (Separated Component) -->
+    <app-empty-state
+      [hasActiveFilters]="hasActiveFilters()"
+      (clearAllFilters)="clearAllFilters()"
+    />
+  } @else {
+    <!-- Articles Feed: Post Cards (Separated Component with animated cover banner) -->
+    <div class="space-y-3">
+      @for (post of displayedPosts(); track post.id) {
+        <app-post-card
+          [post]="post"
+          [isLiked]="hasLiked(post.id)"
+          [authorName]="profile().name"
+          [authorAvatar]="profile().avatar_url"
+          (view)="viewPost($event)"
+          (categorySelect)="selectCategory($event)"
+          (tagSelect)="filterByTag($event)"
+          (toggleLike)="toggleLike($event)"
+          (openComment)="openComment($event)"
+        />
+      }
+    </div>
+
+    <!-- Pagination Controls (Separated Component) -->
+    <app-pagination
+      [currentPage]="safePage()"
+      [totalPages]="totalPages()"
+      [pageNumbers]="pageNumbers()"
+      (pageChange)="goToPage($event)"
+    />
+  }
+</div>

@@ -1,0 +1,244 @@
+<div id="admin-comments-view" class="space-y-4 font-mono-bios text-xs">
+  <!-- Header -->
+  <div class="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+    <div>
+      <h2 class="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
+        COMMENTS
+      </h2>
+    </div>
+
+    <div class="flex items-center gap-1.5 text-[11px]">
+      <span class="text-[var(--text-dim)]">PENDING:</span>
+      <span class="px-2 py-0.5 bg-[var(--accent-orange)] text-[var(--accent-orange-contrast)] font-bold">
+        {{ comments().filter((c) => c.status === 'pending').length }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Tabs & Search -->
+  <div class="p-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+    <div class="flex items-center gap-1 overflow-x-auto text-[11px]">
+      @for (tab of ['all', 'pending', 'approved', 'rejected', 'spam']; track tab) {
+        @let count = tab === 'all' ? comments().length : comments().filter((c) => c.status === tab).length;
+        <button
+          type="button"
+          (click)="activeTab.set($any(tab))"
+          class="px-2 py-1 border uppercase whitespace-nowrap cursor-pointer transition-colors"
+          [class.bg-[var(--accent-terminal)]]="activeTab() === tab"
+          [class.text-[var(--accent-terminal-contrast)]]="activeTab() === tab"
+          [class.border-[var(--accent-terminal)]]="activeTab() === tab"
+          [class.font-bold]="activeTab() === tab"
+          [class.bg-[var(--bg-canvas)]]="activeTab() !== tab"
+          [class.text-[var(--text-muted)]]="activeTab() !== tab"
+          [class.border-[var(--border-subtle)]]="activeTab() !== tab"
+          [class.hover:border-[var(--border-color)]]="activeTab() !== tab"
+        >
+          <span>{{ tab }}</span>
+          <span class="opacity-75 font-mono ml-1">({{ count }})</span>
+        </button>
+      }
+    </div>
+
+    <div class="relative w-full sm:w-64">
+      <svg lucideSearch class="w-3.5 h-3.5 absolute left-2 top-2 text-[var(--text-dim)] pointer-events-none"></svg>
+      <input
+        type="text"
+        placeholder="Filter by name, email, or content..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-2 py-1 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)]"
+      />
+    </div>
+  </div>
+
+  <!-- Batch Action Toolbar if selected -->
+  @if (selectedIds().length > 0) {
+    <div class="p-2 bg-[var(--bg-highlight)] border border-[var(--border-color)] flex items-center justify-between gap-2 text-[11px] animate-in fade-in">
+      <div class="font-bold text-[var(--text-primary)]">
+        {{ selectedIds().length }} selected
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          (click)="batchAction('approve')"
+          class="px-2 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold cursor-pointer"
+        >
+          Approve
+        </button>
+        <button
+          type="button"
+          (click)="batchAction('reject')"
+          class="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-orange)] text-[var(--text-primary)] cursor-pointer"
+        >
+          Reject
+        </button>
+        <button
+          type="button"
+          (click)="batchAction('spam')"
+          class="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--accent-fkey)] cursor-pointer"
+        >
+          Spam
+        </button>
+        <button
+          type="button"
+          (click)="batchAction('delete')"
+          class="px-2 py-0.5 bg-[var(--accent-fkey)] text-white font-bold cursor-pointer"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Comments Table -->
+  <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] overflow-x-auto">
+    <table class="w-full text-left border-collapse text-xs min-w-[760px]">
+      <thead>
+        <tr class="bg-[var(--bg-canvas)] border-b border-[var(--border-color)] text-[10px] text-[var(--text-dim)] uppercase tracking-wider">
+          <th class="p-2.5 w-8 text-center">
+            <button
+              type="button"
+              (click)="toggleSelectAll()"
+              class="cursor-pointer"
+              aria-label="Select all"
+            >
+              @if (isAllSelected()) {
+                <svg lucideCheckSquare class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+              } @else {
+                <svg lucideSquare class="w-3.5 h-3.5 text-[var(--text-dim)]"></svg>
+              }
+            </button>
+          </th>
+          <th class="p-2.5">Author</th>
+          <th class="p-2.5">Comment Snippet</th>
+          <th class="p-2.5">Article Context</th>
+          <th class="p-2.5">Status</th>
+          <th class="p-2.5 text-right">Moderation Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--border-subtle)]">
+        @if (filteredComments().length === 0) {
+          <tr>
+            <td colspan="6" class="p-8 text-center text-[var(--text-dim)]">
+              No comments match the current view.
+            </td>
+          </tr>
+        } @else {
+          @for (c of filteredComments(); track c.id) {
+            @let selected = isSelected(c.id);
+
+            <tr
+              class="hover:bg-[var(--bg-canvas)]/60 transition-colors"
+              [class.bg-[var(--bg-canvas)]]="selected"
+            >
+              <td class="p-2.5 text-center">
+                <button
+                  type="button"
+                  (click)="toggleSelect(c.id)"
+                  class="cursor-pointer"
+                  [attr.aria-label]="'Select comment by ' + c.author_name"
+                >
+                  @if (selected) {
+                    <svg lucideCheckSquare class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+                  } @else {
+                    <svg lucideSquare class="w-3.5 h-3.5 text-[var(--text-dim)]"></svg>
+                  }
+                </button>
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap">
+                <div class="font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <span>{{ c.author_name }}</span>
+                </div>
+                <div class="text-[10px] text-[var(--text-dim)] font-mono">
+                  {{ c.author_email }}
+                </div>
+                <div class="text-[9px] text-[var(--text-dim)] mt-0.5">
+                  {{ c.created_at.slice(0, 16).replace('T', ' ') }}
+                </div>
+              </td>
+
+              <td class="p-2.5 max-w-xs">
+                <p class="text-[11px] text-[var(--text-muted)] line-clamp-3 leading-relaxed">
+                  {{ c.content }}
+                </p>
+              </td>
+
+              <td class="p-2.5 max-w-[180px]">
+                <div class="text-[11px] font-semibold text-[var(--text-primary)] truncate">
+                  {{ c.post_title || 'Post Reference' }}
+                </div>
+                <button
+                  type="button"
+                  (click)="viewPost(c.post_id)"
+                  class="text-[10px] text-[var(--accent-terminal)] hover:underline flex items-center gap-1 cursor-pointer mt-0.5"
+                >
+                  <span>View Post</span>
+                  <svg lucideExternalLink class="w-2.5 h-2.5"></svg>
+                </button>
+              </td>
+
+              <td class="p-2.5 whitespace-nowrap">
+                <span
+                  class="px-1.5 py-0.5 uppercase font-bold text-[9px]"
+                  [class.bg-[var(--accent-orange)]]="c.status === 'pending'"
+                  [class.text-[var(--accent-orange-contrast)]]="c.status === 'pending'"
+                  [class.bg-[var(--accent-terminal)]]="c.status === 'approved'"
+                  [class.text-[var(--accent-terminal-contrast)]]="c.status === 'approved'"
+                  [class.bg-red-500]="c.status === 'rejected' || c.status === 'spam'"
+                  [class.text-white]="c.status === 'rejected' || c.status === 'spam'"
+                >
+                  {{ c.status }}
+                </span>
+              </td>
+
+              <td class="p-2.5 text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-1">
+                  @if (c.status !== 'approved') {
+                    <button
+                      type="button"
+                      (click)="updateStatus(c.id, 'approved')"
+                      class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--accent-terminal)] text-[10px] cursor-pointer"
+                      title="Approve Comment"
+                    >
+                      Approve
+                    </button>
+                  }
+                  @if (c.status !== 'rejected') {
+                    <button
+                      type="button"
+                      (click)="updateStatus(c.id, 'rejected')"
+                      class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[var(--text-dim)] text-[10px] cursor-pointer"
+                      title="Reject Comment"
+                    >
+                      Reject
+                    </button>
+                  }
+                  @if (c.status !== 'spam') {
+                    <button
+                      type="button"
+                      (click)="updateStatus(c.id, 'spam')"
+                      class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-orange)] text-[var(--accent-orange)] cursor-pointer"
+                      title="Mark as Spam"
+                    >
+                      <svg lucideAlertOctagon class="w-3 h-3"></svg>
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    (click)="deleteComment(c.id)"
+                    class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer"
+                    title="Delete Comment"
+                  >
+                    <svg lucideTrash2 class="w-3 h-3"></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

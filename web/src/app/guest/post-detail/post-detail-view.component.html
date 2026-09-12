@@ -1,0 +1,266 @@
+@if (!activePost()) {
+  <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center font-mono-bios text-xs">
+    <div>Post not found or has been removed.</div>
+    <button
+      type="button"
+      (click)="goBack()"
+      class="mt-3 px-3 py-1.5 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] cursor-pointer"
+    >
+      [ESC] Return to Index
+    </button>
+  </div>
+} @else {
+  @let post = activePost()!;
+
+  <div id="post-detail-container" class="space-y-4">
+    <!-- Reading Progress Indicator Bar -->
+    <div
+      id="reading-progress-track"
+      class="w-full h-1 bg-[var(--bg-subtle)] border border-[var(--border-color)] overflow-hidden sticky top-0 z-30"
+    >
+      <div
+        id="reading-progress-bar"
+        class="h-full bg-[var(--accent-terminal)] transition-all duration-150"
+        [style.width.%]="scrollProgress()"
+      ></div>
+    </div>
+
+    <!-- Navigation Top Action Bar -->
+    <div class="flex items-center justify-between border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 font-mono-bios text-xs shadow-sm">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+      >
+        <svg lucideArrowLeft class="w-3.5 h-3.5"></svg>
+        <span>BACK [ESC]</span>
+      </button>
+
+      <div class="flex items-center gap-2">
+        <span class="hidden sm:flex items-center gap-1 text-[10px] text-[var(--text-dim)]">
+          <svg lucideClock class="w-3 h-3"></svg>
+          {{ post.reading_time_minutes }} min read
+        </span>
+
+        <!-- Zen Toggle -->
+        <button
+          type="button"
+          (click)="toggleZen()"
+          class="flex items-center gap-1 px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[11px] cursor-pointer"
+          title="Switch to Zen Reading Mode [F3]"
+        >
+          <svg lucideMaximize2 class="w-3 h-3 text-[var(--accent-terminal)]"></svg>
+          <span class="hidden md:inline">ZEN</span>
+        </button>
+
+        <!-- Share -->
+        <button
+          type="button"
+          (click)="handleShare()"
+          class="flex items-center gap-1 px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[11px] cursor-pointer"
+          title="Share article URL"
+        >
+          @if (copied()) {
+            <svg lucideCheck class="w-3 h-3 text-[var(--accent-terminal)]"></svg>
+            <span class="text-[var(--accent-terminal)] font-bold">COPIED</span>
+          } @else {
+            <svg lucideShare2 class="w-3 h-3"></svg>
+            <span class="hidden md:inline">SHARE</span>
+          }
+        </button>
+
+        <!-- Like Button -->
+        <button
+          type="button"
+          (click)="toggleLike()"
+          class="flex items-center gap-1 px-2.5 py-1 text-[11px] border cursor-pointer transition-colors"
+          [class.bg-[var(--accent-fkey)]]="isLiked()"
+          [class.text-white]="isLiked()"
+          [class.border-[var(--accent-fkey)]]="isLiked()"
+          [class.bg-[var(--bg-canvas)]]="!isLiked()"
+          [class.text-[var(--text-primary)]]="!isLiked()"
+          [class.border-[var(--border-color)]]="!isLiked()"
+          [class.hover:border-[var(--text-primary)]]="!isLiked()"
+        >
+          <svg lucideHeart class="w-3.5 h-3.5" [class.fill-current]="isLiked()"></svg>
+          <span class="font-bold">{{ post.likes_count }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Article Content Card -->
+    <article
+      id="main-article-body"
+      class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 sm:p-8 shadow-sm space-y-6"
+    >
+      <!-- Post Meta Header -->
+      <div class="space-y-3 pb-5 border-b border-[var(--border-subtle)] font-mono-bios">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 bg-[var(--bg-canvas)] border border-[var(--accent-terminal)] text-[var(--accent-terminal)] text-[11px] uppercase font-bold tracking-wider">
+            {{ post.category }}
+          </span>
+          @if (post.is_featured) {
+            <span class="px-1.5 py-0.5 bg-[var(--accent-orange)] text-[var(--accent-orange-contrast)] text-[9px] font-bold uppercase tracking-wider">
+              FEATURED
+            </span>
+          }
+        </div>
+
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+          {{ post.title }}
+        </h1>
+
+        @if (post.subtitle) {
+          <p class="text-sm sm:text-base text-[var(--text-muted)] italic leading-relaxed">
+            {{ post.subtitle }}
+          </p>
+        }
+
+        <!-- Author & Metric Strip -->
+        <div class="pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-dim)]">
+          <div class="flex items-center gap-2">
+            <app-author-avatar [name]="profile().name" [avatarUrl]="profile().avatar_url" size="sm" />
+            <div>
+              <span class="font-bold text-[var(--text-primary)] block leading-none">{{ profile().name }}</span>
+              <span class="text-[10px] text-[var(--text-dim)]">{{ profile().role }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 text-[11px]">
+            <time [attr.datetime]="post.created_at" class="flex items-center gap-1">
+              <svg lucideCalendar class="w-3.5 h-3.5"></svg>
+              {{ formattedDate() }}
+            </time>
+            <span>•</span>
+            <span class="flex items-center gap-1">
+              <svg lucideEye class="w-3.5 h-3.5"></svg>
+              {{ post.views_count }} views
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cover Image -->
+      @if (post.cover_image) {
+        <div class="w-full h-64 sm:h-80 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-canvas)]">
+          <img
+            [src]="post.cover_image"
+            [alt]="post.title"
+            referrerpolicy="no-referrer"
+            class="w-full h-full object-cover grayscale contrast-110"
+          />
+        </div>
+      }
+
+      <!-- Markdown Body -->
+      <app-markdown-renderer [content]="post.content" />
+
+      <!-- Post Tags -->
+      @if (post.tags.length > 0) {
+        <div class="pt-4 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-1.5 font-mono-bios text-xs">
+          <span class="text-[var(--text-dim)] flex items-center gap-1 mr-1">
+            <svg lucideTag class="w-3 h-3"></svg>
+            <span>TOPICS:</span>
+          </span>
+          @for (tag of post.tags; track tag) {
+            <span class="px-2 py-0.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-muted)] text-[11px]">
+              #{{ tag }}
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Author Card Footer -->
+      <div class="mt-8 p-4 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] font-mono-bios flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <app-author-avatar [name]="profile().name" [avatarUrl]="profile().avatar_url" size="lg" />
+        <div class="space-y-1 flex-1 min-w-0">
+          <div class="font-bold text-xs text-[var(--text-primary)]">
+            {{ profile().name }}
+          </div>
+          <div class="text-[11px] text-[var(--accent-terminal)]">
+            {{ profile().role }}
+          </div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            {{ profile().bio }}
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <!-- Comments Section -->
+    <section id="comments-section" class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 sm:p-6 shadow-sm space-y-4 font-mono-bios">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+        <div class="flex items-center gap-2">
+          <svg lucideMessageSquare class="w-4 h-4 text-[var(--accent-terminal)]"></svg>
+          <h3 class="font-bold uppercase tracking-wider text-xs sm:text-sm text-[var(--text-primary)]">
+            TECHNICAL COMMENTARY ({{ approvedComments().length }})
+          </h3>
+        </div>
+
+        <button
+          type="button"
+          (click)="openComment()"
+          class="px-3 py-1 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs hover:opacity-90 cursor-pointer uppercase tracking-wider transition-opacity"
+        >
+          POST COMMENT
+        </button>
+      </div>
+
+      <!-- Pending Moderation Notice if any -->
+      @if (pendingComments().length > 0) {
+        <div class="p-2.5 bg-[var(--accent-orange)]/10 border border-[var(--accent-orange)] text-[var(--accent-orange)] text-xs flex items-center gap-2">
+          <svg lucideAlertCircle class="w-4 h-4 shrink-0"></svg>
+          <span>You have {{ pendingComments().length }} pending comment(s) currently awaiting moderation approval.</span>
+        </div>
+      }
+
+      <!-- Comments List -->
+      @if (approvedComments().length === 0) {
+        <!-- Empty State for Comments (Tier 3 Anti-Slop Compliant) -->
+        <div class="p-8 text-center bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-2">
+          <div class="text-[var(--text-dim)]">
+            <svg lucideMessageSquare class="w-6 h-6 mx-auto opacity-50 mb-2"></svg>
+            <div class="font-bold text-xs uppercase tracking-wider text-[var(--text-muted)]">
+              NO TECHNICAL COMMENTARY LOGGED YET
+            </div>
+            <p class="text-[11px] text-[var(--text-dim)] mt-1">
+              Be the first engineer to contribute to this discussion.
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="openComment()"
+            class="mt-3 px-3 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] text-xs cursor-pointer"
+          >
+            Leave a Comment
+          </button>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (c of approvedComments(); track c.id) {
+            <div class="p-3.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] space-y-2 text-xs">
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <app-author-avatar [name]="c.author_name" size="xs" />
+                  <span class="font-bold text-[var(--text-primary)]">{{ c.author_name }}</span>
+                  <span class="flex items-center gap-0.5 text-[9px] px-1 py-0.2 bg-[var(--accent-terminal)]/10 text-[var(--accent-terminal)] border border-[var(--accent-terminal)] font-semibold">
+                    <svg lucideShieldCheck class="w-2.5 h-2.5"></svg>
+                    <span>VERIFIED</span>
+                  </span>
+                </div>
+                <time [attr.datetime]="c.created_at" class="text-[10px] text-[var(--text-dim)]">
+                  {{ formatCommentDate(c.created_at) }}
+                </time>
+              </div>
+
+              <!-- Comment Body with Markdown formatting -->
+              <div class="text-[var(--text-muted)] leading-relaxed pl-6">
+                <app-markdown-renderer [content]="c.content" />
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+}

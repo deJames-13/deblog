@@ -1,0 +1,130 @@
+<article
+  [id]="'article-card-' + post().id"
+  (click)="view.emit(post())"
+  class="guest-post-card group"
+>
+  <!-- Background Cover Banner -->
+  @if (post().cover_image) {
+    <div class="card-banner-wrapper">
+      <img
+        [src]="post().cover_image"
+        [alt]="post().title"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        class="card-banner-img"
+      />
+      <div class="card-banner-gradient-overlay"></div>
+    </div>
+  }
+
+  <!-- Foreground Content Layer -->
+  <div class="card-content-layer">
+    <!-- Category & Timestamps -->
+    <div class="card-meta-top">
+      <button
+        type="button"
+        (click)="onCategoryClick($event)"
+        class="card-category-badge"
+      >
+        {{ post().category }}
+      </button>
+
+      <div class="card-timestamp-group">
+        <span class="flex items-center gap-1">
+          <svg lucideClock class="w-3 h-3"></svg>
+          {{ post().reading_time_minutes }} min read
+        </span>
+        <span>•</span>
+        <time [attr.datetime]="post().created_at">
+          {{ formattedDate() }}
+        </time>
+      </div>
+    </div>
+
+    <!-- Title & Subtitle Area (sits over top faded banner) -->
+    <div class="card-title-area">
+      <h2 class="card-title">
+        {{ post().title }}
+      </h2>
+      @if (post().subtitle) {
+        <p class="card-subtitle">
+          {{ post().subtitle }}
+        </p>
+      }
+    </div>
+
+    <!-- Excerpt -->
+    <p class="card-excerpt">
+      {{ post().excerpt }}
+    </p>
+
+    <!-- Tags -->
+    @if (post().tags.length > 0) {
+      <div class="card-tags-list">
+        @for (tag of post().tags; track tag) {
+          <button
+            type="button"
+            (click)="onTagClick($event, tag)"
+            class="card-tag-pill"
+          >
+            #{{ tag }}
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Footer Actions & Metadata -->
+    <div class="card-footer-bar">
+      <div class="card-author-views">
+        <!-- Author avatar badge -->
+        <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
+          <app-author-avatar [name]="authorName()" [avatarUrl]="authorAvatar()" size="xs" />
+          <span class="truncate max-w-[120px]">{{ authorName() }}</span>
+        </div>
+
+        <!-- Views -->
+        <span class="flex items-center gap-1 text-[10px] text-[var(--text-dim)]">
+          <svg lucideEye class="w-3 h-3"></svg>
+          {{ post().views_count }}
+        </span>
+      </div>
+
+      <div class="card-actions-group">
+        <!-- Like button -->
+        <button
+          type="button"
+          (click)="onLikeClick($event)"
+          class="card-btn-like"
+          [class.bg-[var(--accent-fkey)]]="isLiked()"
+          [class.text-white]="isLiked()"
+          [class.border-[var(--accent-fkey)]]="isLiked()"
+          title="Applaud / Like entry"
+        >
+          <svg lucideHeart class="w-3 h-3" [class.fill-current]="isLiked()"></svg>
+          <span>{{ post().likes_count }}</span>
+        </button>
+
+        <!-- Comment button -->
+        <button
+          type="button"
+          (click)="onCommentClick($event)"
+          class="card-btn-comment"
+          title="Post technical commentary"
+        >
+          <svg lucideMessageSquare class="w-3 h-3"></svg>
+          <span>COMMENT</span>
+        </button>
+
+        <!-- Read Entry Button -->
+        <button
+          type="button"
+          (click)="onReadClick($event)"
+          class="card-btn-read"
+        >
+          <span>READ</span>
+          <svg lucideArrowRight class="w-3 h-3"></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,43 @@
+/* ==========================================================================
+   COMMON SLICE: FKEY BAR STYLES
+   ========================================================================== */
+
+.bios-fkey-bar {
+  width: 100%;
+  background-color: var(--bg-canvas);
+  border-top: 1px solid var(--border-color);
+  padding: 0.25rem 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  user-select: none;
+}
+
+.bios-fkey-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.375rem;
+  font-size: 11px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.bios-fkey-btn:hover {
+  border-color: var(--text-primary);
+  background-color: var(--bg-highlight);
+}
+
+.bios-fkey-btn-active {
+  background-color: var(--accent-terminal);
+  color: var(--accent-terminal-contrast);
+  border-color: var(--accent-terminal);
+  font-weight: 700;
+}
+
+.bios-fkey-prefix {
+  font-weight: 700;
+  color: var(--accent-fkey);
+  opacity: 0.95;
+}

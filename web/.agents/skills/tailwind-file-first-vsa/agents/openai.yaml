@@ -1,0 +1,3 @@
+interface:
+  display_name: "Tailwind File-First VSA"
+  short_description: "Prioritizes file-based Tailwind CSS styling using Vertical Slice Architecture (VSA) to reduce component bloat and maintain a scalable global design system."

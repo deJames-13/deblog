@@ -1,0 +1,104 @@
+/* ==========================================================================
+   COMMON SLICE: TOPBAR STYLES
+   ========================================================================== */
+
+.bios-header-container {
+  width: 100%;
+  z-index: 20;
+}
+
+.bios-topbar {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.375rem 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  user-select: none;
+}
+
+.bios-topbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.bios-brand-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: opacity 150ms ease;
+}
+
+.bios-brand-btn:hover {
+  opacity: 0.85;
+}
+
+.bios-control-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 11px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.bios-control-btn:hover {
+  border-color: var(--text-primary);
+}
+
+.bios-control-btn-active {
+  background-color: var(--accent-terminal);
+  color: var(--accent-terminal-contrast);
+  border-color: var(--accent-terminal);
+  font-weight: 700;
+}
+
+.bios-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.25rem;
+  width: 10rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.bios-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.bios-dropdown-item:hover {
+  background-color: var(--bg-canvas);
+}
+
+.bios-dropdown-item-active {
+  background-color: var(--bg-highlight);
+  color: var(--accent-terminal);
+  font-weight: 700;
+}

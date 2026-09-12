@@ -1,0 +1,480 @@
+@if (currentRoute() === 'admin') {
+  <!-- ==========================================
+       1. ADMIN TOP BAR & DEDICATED SUB-NAVBAR
+       ========================================== -->
+  <div id="bios-admin-header-group" class="w-full z-20 space-y-0">
+    <header
+      id="bios-admin-topbar"
+      class="w-full bg-[var(--bg-surface)] border-b border-[var(--border-color)] px-2 sm:px-3 py-1.5 font-mono-bios select-none"
+    >
+      <div class="flex items-center justify-between gap-2 text-xs">
+        <!-- Left: Branding & Admin Pill -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            (click)="navigateTo('landing')"
+            class="flex items-center gap-1.5 tracking-wider hover:opacity-80 transition-opacity cursor-pointer"
+            title="Return to Guest Mode [F1]"
+          >
+            <img
+              [src]="logoUrl()"
+              alt="deblog logo"
+              class="w-5 h-5 sm:w-5.5 sm:h-5.5 object-contain"
+            />
+            <span class="tracking-tight text-sm sm:text-base font-extrabold normal-case text-[var(--text-primary)]">
+              <span class="text-[var(--accent-terminal)] font-black">de</span>blog
+            </span>
+          </button>
+          <span class="px-1.5 py-0.5 bg-[var(--accent-fkey)]/10 border border-[var(--accent-fkey)] text-[var(--accent-fkey)] font-bold text-[9px] uppercase tracking-wider">
+            ADMIN
+          </span>
+        </div>
+
+        <!-- Right: ICON-FIRST Controls -->
+        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <!-- Theme Control -->
+          <div class="relative">
+            <button
+              type="button"
+              id="btn-admin-theme"
+              (click)="toggleThemeMenu()"
+              class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
+              [title]="'Theme: ' + theme() + ' [F4]'"
+              aria-label="Change Theme"
+            >
+              <span
+                class="w-2.5 h-2.5 inline-block border border-black/30"
+                [style.backgroundColor]="
+                  theme() === 'night'
+                    ? '#3d3d3d'
+                    : theme() === 'twilight'
+                    ? '#2c2b2b'
+                    : theme() === 'sepia'
+                    ? '#fbf0d9'
+                    : '#ffffff'
+                "
+              ></span>
+              <span class="hidden lg:inline capitalize">
+                {{ theme() === 'soft_light' ? 'light' : theme() }}
+              </span>
+            </button>
+
+            @if (showThemeMenu()) {
+              <div
+                id="admin-theme-menu"
+                class="absolute right-0 top-full mt-1 w-40 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg z-50 p-1 flex flex-col gap-0.5"
+              >
+                <div class="px-2 py-1 text-[9px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                  Color Theme [F4]
+                </div>
+                @for (opt of themeOptions; track opt.id) {
+                  <button
+                    type="button"
+                    (click)="setTheme(opt.id)"
+                    class="flex items-center justify-between px-2 py-1 text-left text-xs cursor-pointer"
+                    [class.bg-[var(--bg-highlight)]]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                    [class.text-[var(--accent-terminal)]]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                    [class.font-bold]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                    [class.hover:bg-[var(--bg-canvas)]]="theme() !== opt.id"
+                    [class.text-[var(--text-primary)]]="theme() !== opt.id"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="w-3 h-3 inline-block border border-[var(--border-color)]"
+                        [style.backgroundColor]="opt.hex"
+                      ></span>
+                      <span>{{ opt.label }}</span>
+                    </div>
+                    @if (theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')) {
+                      <span class="text-[10px]">●</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Font Control -->
+          <div class="relative">
+            <button
+              type="button"
+              id="btn-admin-font"
+              (click)="toggleFontMenu()"
+              class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
+              [title]="'Font: ' + font() + ' [F6]'"
+              aria-label="Switch Font"
+            >
+              <svg lucideType class="w-3.5 h-3.5 text-[var(--text-muted)]"></svg>
+              <span class="hidden lg:inline capitalize">{{ font() }}</span>
+            </button>
+
+            @if (showFontMenu()) {
+              <div
+                id="admin-font-menu"
+                class="absolute right-0 top-full mt-1 w-40 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg z-50 p-1 flex flex-col gap-0.5"
+              >
+                <div class="px-2 py-1 text-[9px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                  Reading Font [F6]
+                </div>
+                @for (opt of fontOptions; track opt.id) {
+                  <button
+                    type="button"
+                    (click)="setFont(opt.id)"
+                    class="flex items-center justify-between px-2 py-1 text-left text-xs cursor-pointer"
+                    [class.bg-[var(--bg-highlight)]]="font() === opt.id"
+                    [class.text-[var(--accent-terminal)]]="font() === opt.id"
+                    [class.font-bold]="font() === opt.id"
+                    [class.hover:bg-[var(--bg-canvas)]]="font() !== opt.id"
+                    [class.text-[var(--text-primary)]]="font() !== opt.id"
+                  >
+                    <span [class]="'font-' + opt.id">{{ opt.name }}</span>
+                    @if (font() === opt.id) {
+                      <span class="text-[10px]">●</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Guest View Action -->
+          <button
+            type="button"
+            (click)="navigateTo('landing')"
+            class="flex items-center gap-1 p-1 sm:px-2 sm:py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[var(--text-primary)] text-[11px] cursor-pointer"
+            title="Guest View [F1]"
+            aria-label="Guest View"
+          >
+            <svg lucideExternalLink class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+            <span class="hidden md:inline">GUEST</span>
+          </button>
+
+          <!-- Terminate Session -->
+          <button
+            type="button"
+            (click)="logoutAdmin()"
+            class="flex items-center gap-1 p-1 sm:px-2 sm:py-1 bg-[var(--bg-canvas)] border border-[var(--accent-fkey)] text-[var(--accent-fkey)] hover:bg-[var(--accent-fkey)] hover:text-white text-[11px] cursor-pointer"
+            title="Terminate Session"
+            aria-label="Terminate Session"
+          >
+            <svg lucideLogOut class="w-3.5 h-3.5"></svg>
+            <span class="hidden md:inline">EXIT</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dedicated Admin Navigation Bar (Shown on Tablet & Mobile, hidden on Desktop lg+ where sidebar is active) -->
+    <nav
+      id="bios-admin-subbar"
+      aria-label="Admin Navigation"
+      class="w-full bg-[var(--bg-canvas)] border-b border-[var(--border-color)] px-2 sm:px-3 py-1 font-mono-bios select-none shadow-xs lg:hidden"
+    >
+      <div class="flex items-center justify-between sm:justify-start gap-1 sm:gap-1.5 overflow-x-auto">
+        @for (item of adminNavItems(); track item.id) {
+          @let isActive = adminTab() === item.id;
+          <button
+            type="button"
+            [id]="'admin-nav-' + item.id"
+            (click)="setAdminTab(item.id)"
+            class="flex items-center justify-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1 border text-xs uppercase whitespace-nowrap cursor-pointer transition-colors"
+            [class.bg-[var(--accent-terminal)]]="isActive"
+            [class.text-[var(--accent-terminal-contrast)]]="isActive"
+            [class.border-[var(--accent-terminal)]]="isActive"
+            [class.font-bold]="isActive"
+            [class.bg-[var(--bg-surface)]]="!isActive"
+            [class.text-[var(--text-muted)]]="!isActive"
+            [class.border-[var(--border-subtle)]]="!isActive"
+            [class.hover:border-[var(--border-color)]]="!isActive"
+            [class.hover:text-[var(--text-primary)]]="!isActive"
+            [title]="item.label"
+            [attr.aria-label]="item.label"
+          >
+            @switch (item.id) {
+              @case ('dashboard') {
+                <svg lucideLayoutDashboard class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+              @case ('posts') {
+                <svg lucideFileText class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+              @case ('users') {
+                <svg lucideUsers class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+              @case ('comments') {
+                <svg lucideMessageSquare class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+              @case ('media') {
+                <svg lucideImage class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+              @case ('settings') {
+                <svg lucideSettings class="w-3.5 h-3.5 shrink-0"></svg>
+              }
+            }
+            <span class="hidden sm:inline">{{ item.label }}</span>
+            @if (item.badge) {
+              <span
+                class="px-1 py-0.1 text-[8px] sm:text-[9px] font-bold"
+                [class]="
+                  item.badgeColor
+                    ? item.badgeColor
+                    : isActive
+                    ? 'bg-black text-[var(--accent-terminal)]'
+                    : 'bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)]'
+                "
+              >
+                {{ item.badge }}
+              </span>
+            }
+          </button>
+        }
+      </div>
+    </nav>
+  </div>
+} @else {
+  <!-- ==========================================
+       2. GUEST TOP BAR
+       ========================================== -->
+  <header
+    id="bios-topbar"
+    class="w-full bg-[var(--bg-surface)] border-b border-[var(--border-color)] px-2 sm:px-3 py-1.5 font-mono-bios select-none z-20"
+  >
+    <div class="flex items-center justify-between gap-2 text-xs">
+      <!-- Left: System branding & Sidebar toggle -->
+      <div class="flex items-center gap-2 shrink-0">
+        @if (!zenMode()) {
+          <button
+            type="button"
+            id="btn-toggle-sidebar"
+            (click)="toggleSidebar()"
+            class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent hover:border-[var(--border-color)] cursor-pointer"
+            [title]="sidebarOpen() ? 'Hide Sidebar' : 'Show Sidebar'"
+            aria-label="Toggle Sidebar"
+          >
+            @if (sidebarOpen()) {
+              <svg lucidePanelLeftClose class="w-4 h-4"></svg>
+            } @else {
+              <svg lucidePanelLeftOpen class="w-4 h-4"></svg>
+            }
+          </button>
+        }
+
+        <button
+          type="button"
+          id="btn-deblog-home"
+          (click)="navigateTo('landing')"
+          class="flex items-center gap-1.5 tracking-wider hover:opacity-80 transition-opacity cursor-pointer"
+          title="deblog Home"
+        >
+          <img
+            [src]="logoUrl()"
+            alt="deblog logo"
+            class="w-5 h-5 sm:w-5.5 sm:h-5.5 object-contain"
+          />
+          <span class="tracking-tight text-sm sm:text-base font-extrabold normal-case text-[var(--text-primary)]">
+            <span class="text-[var(--accent-terminal)] font-black">de</span>blog
+          </span>
+        </button>
+      </div>
+
+      <!-- Center: Search Quick Input -->
+      <div class="flex-1 max-w-xs mx-1 hidden md:block">
+        <div class="relative flex items-center">
+          <svg lucideSearch class="w-3.5 h-3.5 absolute left-2 text-[var(--text-dim)] pointer-events-none"></svg>
+          <input
+            id="topbar-search-input"
+            type="text"
+            [value]="searchQuery()"
+            (input)="onSearchChange($any($event.target).value)"
+            placeholder="Search posts or tags [F2]..."
+            class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-7 py-1 text-[11px] border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)] font-mono-bios placeholder:text-[var(--text-dim)]"
+          />
+          @if (searchQuery()) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="absolute right-1 text-[10px] text-[var(--text-dim)] hover:text-[var(--text-primary)] px-1"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Right: Controls & Toggles (ICON-FIRST) -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Theme dropdown -->
+        <div class="relative">
+          <button
+            type="button"
+            id="btn-topbar-theme"
+            (click)="toggleThemeMenu()"
+            class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
+            [title]="'Theme: ' + theme() + ' [F4]'"
+            aria-label="Change Theme"
+          >
+            <span
+              class="w-2.5 h-2.5 inline-block border border-black/30"
+              [style.backgroundColor]="
+                theme() === 'night'
+                  ? '#3d3d3d'
+                  : theme() === 'twilight'
+                  ? '#2c2b2b'
+                  : theme() === 'sepia'
+                  ? '#fbf0d9'
+                  : '#ffffff'
+              "
+            ></span>
+            <span class="hidden lg:inline capitalize">
+              {{ theme() === 'soft_light' ? 'light' : theme() }}
+            </span>
+          </button>
+
+          @if (showThemeMenu()) {
+            <div
+              id="theme-dropdown-menu"
+              class="absolute right-0 top-full mt-1 w-40 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg z-50 p-1 flex flex-col gap-0.5"
+            >
+              <div class="px-2 py-1 text-[9px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                Color Theme [F4]
+              </div>
+              @for (opt of themeOptions; track opt.id) {
+                <button
+                  type="button"
+                  (click)="setTheme(opt.id)"
+                  class="flex items-center justify-between px-2 py-1 text-left text-xs cursor-pointer"
+                  [class.bg-[var(--bg-highlight)]]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                  [class.text-[var(--accent-terminal)]]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                  [class.font-bold]="theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')"
+                  [class.hover:bg-[var(--bg-canvas)]]="theme() !== opt.id"
+                  [class.text-[var(--text-primary)]]="theme() !== opt.id"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="w-3 h-3 inline-block border border-[var(--border-color)]"
+                      [style.backgroundColor]="opt.hex"
+                    ></span>
+                    <span>{{ opt.label }}</span>
+                  </div>
+                  @if (theme() === opt.id || (opt.id === 'light' && theme() === 'soft_light')) {
+                    <span class="text-[10px]">●</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Font dropdown -->
+        <div class="relative">
+          <button
+            type="button"
+            id="btn-topbar-font"
+            (click)="toggleFontMenu()"
+            class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
+            [title]="'Font: ' + font() + ' [F6]'"
+            aria-label="Switch Font"
+          >
+            <svg lucideType class="w-3.5 h-3.5 text-[var(--text-muted)]"></svg>
+            <span class="hidden lg:inline capitalize">{{ font() }}</span>
+          </button>
+
+          @if (showFontMenu()) {
+            <div
+              id="font-dropdown-menu"
+              class="absolute right-0 top-full mt-1 w-40 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg z-50 p-1 flex flex-col gap-0.5"
+            >
+              <div class="px-2 py-1 text-[9px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                Reading Font [F6]
+              </div>
+              @for (opt of fontOptions; track opt.id) {
+                <button
+                  type="button"
+                  (click)="setFont(opt.id)"
+                  class="flex items-center justify-between px-2 py-1 text-left text-xs cursor-pointer"
+                  [class.bg-[var(--bg-highlight)]]="font() === opt.id"
+                  [class.text-[var(--accent-terminal)]]="font() === opt.id"
+                  [class.font-bold]="font() === opt.id"
+                  [class.hover:bg-[var(--bg-canvas)]]="font() !== opt.id"
+                  [class.text-[var(--text-primary)]]="font() !== opt.id"
+                >
+                  <span [class]="'font-' + opt.id">{{ opt.name }}</span>
+                  @if (font() === opt.id) {
+                    <span class="text-[10px]">●</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Zen Mode Button -->
+        <button
+          type="button"
+          id="btn-topbar-zen"
+          (click)="toggleZenMode()"
+          class="p-1 border cursor-pointer transition-colors"
+          [class.bg-[var(--accent-terminal)]]="zenMode()"
+          [class.text-[var(--accent-terminal-contrast)]]="zenMode()"
+          [class.border-[var(--accent-terminal)]]="zenMode()"
+          [class.bg-[var(--bg-canvas)]]="!zenMode()"
+          [class.text-[var(--text-primary)]]="!zenMode()"
+          [class.border-[var(--border-color)]]="!zenMode()"
+          [class.hover:border-[var(--text-primary)]]="!zenMode()"
+          [title]="zenMode() ? 'Exit Zen Mode (Esc)' : 'Zen Reading Mode [F3]'"
+          aria-label="Zen Mode"
+        >
+          @if (zenMode()) {
+            <svg lucideMinimize2 class="w-3.5 h-3.5"></svg>
+          } @else {
+            <svg lucideMaximize2 class="w-3.5 h-3.5"></svg>
+          }
+        </button>
+
+        <!-- Help Button -->
+        <button
+          type="button"
+          id="btn-topbar-help"
+          (click)="openHelp()"
+          class="p-1 border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
+          title="Help / Shortcuts [F1]"
+          aria-label="Help"
+        >
+          <svg lucideHelpCircle class="w-3.5 h-3.5"></svg>
+        </button>
+
+        <!-- Admin Switch -->
+        <button
+          type="button"
+          id="btn-topbar-admin"
+          (click)="navigateTo(isAdmin() ? 'admin' : 'admin-auth')"
+          class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border cursor-pointer"
+          [class.bg-[var(--accent-fkey)]]="currentRoute() === 'admin-auth'"
+          [class.text-white]="currentRoute() === 'admin-auth'"
+          [class.border-[var(--accent-fkey)]]="currentRoute() === 'admin-auth'"
+          [class.bg-[var(--bg-canvas)]]="currentRoute() !== 'admin-auth'"
+          [class.text-[var(--accent-terminal)]]="currentRoute() !== 'admin-auth' && isAdmin()"
+          [class.border-[var(--accent-terminal)]]="currentRoute() !== 'admin-auth' && isAdmin()"
+          [class.text-[var(--text-muted)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
+          [class.border-[var(--border-color)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
+          [class.hover:border-[var(--text-primary)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
+          [title]="isAdmin() ? 'Admin Dashboard [F8]' : 'Admin Login [F8]'"
+          aria-label="Admin"
+        >
+          @if (isAdmin()) {
+            <svg lucideUnlock class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
+            <span class="hidden sm:inline">ADMIN</span>
+          } @else {
+            <svg lucideLock class="w-3.5 h-3.5"></svg>
+            <span class="hidden sm:inline">LOGIN</span>
+          }
+        </button>
+
+        <!-- System Clock on XL screens -->
+        <div class="hidden xl:block text-[10px] text-[var(--text-dim)] pl-1 border-l border-[var(--border-subtle)]">
+          {{ timeStr() }}
+        </div>
+      </div>
+    </div>
+  </header>
+}

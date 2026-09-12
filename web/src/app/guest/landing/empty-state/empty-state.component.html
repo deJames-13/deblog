@@ -1,0 +1,24 @@
+<!-- Empty State (Tier 3 Anti-Slop Compliant) -->
+<div
+  id="landing-empty-state"
+  class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center font-mono-bios space-y-3"
+>
+  <div class="inline-flex p-3 bg-[var(--bg-canvas)] border border-[var(--border-color)] text-[var(--text-dim)]">
+    <svg lucideBookOpen class="w-6 h-6"></svg>
+  </div>
+  <h3 class="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+    NO MATCHING LOGS DETECTED
+  </h3>
+  <p class="text-xs text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed">
+    No articles matched your current query or category filter. Try clearing filters or refining your search keywords.
+  </p>
+  <div class="pt-2">
+    <button
+      type="button"
+      (click)="clearAllFilters.emit()"
+      class="px-4 py-1.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase tracking-wider hover:opacity-90 cursor-pointer"
+    >
+      CLEAR ALL FILTERS [F5]
+    </button>
+  </div>
+</div>

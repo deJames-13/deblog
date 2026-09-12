@@ -1,0 +1,50 @@
+/* ==========================================================================
+   BASE & RESET STYLES - STRICT BIOS 0PX CORNERS & TYPOGRAPHY
+   ========================================================================== */
+
+* {
+  border-radius: 0px !important;
+}
+
+body {
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+/* Typography Family Utility Classes */
+.font-roboto { font-family: 'Roboto', sans-serif !important; }
+.font-alice { font-family: 'Alice', serif !important; }
+.font-noto { font-family: 'Noto Serif', serif !important; }
+.font-merriweather { font-family: 'Merriweather', serif !important; }
+.font-comfortaa { font-family: 'Comfortaa', cursive, sans-serif !important; }
+.font-mono-bios { font-family: 'JetBrains Mono', 'Courier New', monospace !important; }
+
+/* Custom Scrollbar for BIOS aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Accessibility Focus Visible outline */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-terminal);
+  outline-offset: 1px;
+}

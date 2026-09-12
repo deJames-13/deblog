@@ -1,0 +1,22 @@
+/* ==========================================================================
+   ADMIN SLICE: COMMENTS MODERATION STYLES
+   ========================================================================== */
+
+.admin-comments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.admin-batch-bar {
+  padding: 0.5rem;
+  background-color: var(--bg-highlight);
+  border: 1px solid var(--accent-terminal);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}

@@ -1,0 +1,42 @@
+/* ==========================================================================
+   ADMIN SLICE: DASHBOARD STYLES
+   ========================================================================== */
+
+.admin-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.admin-kpi-card {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-kpi-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 2rem;
+}
+
+.admin-telemetry-bar-bg {
+  flex: 1;
+  background-color: var(--bg-canvas);
+  height: 0.875rem;
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-telemetry-bar-fill {
+  height: 100%;
+  background-color: var(--accent-terminal);
+  transition: width 200ms ease;
+}

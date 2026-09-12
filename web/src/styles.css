@@ -1,0 +1,11 @@
+/* ==========================================================================
+   ROOT STYLESHEET - TAILWIND VSA IMPORTS & GLOBAL DIRECTIVES
+   ========================================================================== */
+
+@import "tailwindcss";
+
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/common/main.css";
+@import "./styles/guest/main.css";
+@import "./styles/admin/main.css";

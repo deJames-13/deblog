@@ -1,0 +1,19 @@
+:host {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  :host {
+    display: flex;
+    flex-direction: column;
+    width: 14rem;
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  :host {
+    width: 16rem;
+  }
+}
+

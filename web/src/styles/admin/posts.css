@@ -1,0 +1,48 @@
+/* ==========================================================================
+   ADMIN SLICE: POSTS MANAGEMENT STYLES
+   ========================================================================== */
+
+.admin-posts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.admin-table-container {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-surface);
+  overflow-x: auto;
+}
+
+.admin-data-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  min-width: 640px;
+}
+
+.admin-data-table th {
+  padding: 0.625rem;
+  background-color: var(--bg-canvas);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-data-table td {
+  padding: 0.625rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-status-badge {
+  padding: 0.125rem 0.375rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
