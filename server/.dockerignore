@@ -1,0 +1,15 @@
+**/.git
+**/.github
+**/.vs
+**/.vscode
+**/.idea
+**/bin/
+**/obj/
+**/.env
+**/.env.*
+!**/.env.example
+**/.pi/
+**/.agents/
+tests/
+Dockerfile*
+README.md
