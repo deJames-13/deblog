@@ -10,6 +10,7 @@ import {
   LucideTrendingUp,
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { SocialIconComponent } from '../../common/social-icon/social-icon.component';
 
 @Component({
@@ -29,6 +30,10 @@ import { SocialIconComponent } from '../../common/social-icon/social-icon.compon
 })
 export class SidebarComponent {
   private readonly blogService = inject(BlogService);
+  private readonly presenceService = inject(PresenceService);
+
+  readonly isAuthorOnline = this.presenceService.isAuthorOnline;
+  readonly presenceStatus = this.presenceService.presenceStatus;
 
   readonly closeMobile = output<void>();
 

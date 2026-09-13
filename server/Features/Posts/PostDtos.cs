@@ -22,6 +22,7 @@ public record PostListItemDto(
     string Title,
     string Slug,
     string? Summary,
+    string Content,
     string Url,
     PostStatus Status,
     bool IsPublished,
@@ -41,7 +42,15 @@ public record PostListItemDto(
         Guid id, string title, string slug, string? summary, string url,
         PostStatus status, bool isPublished, bool isDeleted, DateTime? deletedAt,
         DateTime? publishedAt, DateTime createdAt, AuthorSummaryDto author, PostAnalyticsDto analytics)
-        : this(id, title, slug, summary, url, status, isPublished, isDeleted, deletedAt, publishedAt, createdAt, author, analytics, null, null, null, false)
+        : this(id, title, slug, summary, string.Empty, url, status, isPublished, isDeleted, deletedAt, publishedAt, createdAt, author, analytics, null, null, null, false)
+    {
+    }
+
+    public PostListItemDto(
+        Guid id, string title, string slug, string? summary, string content, string url,
+        PostStatus status, bool isPublished, bool isDeleted, DateTime? deletedAt,
+        DateTime? publishedAt, DateTime createdAt, AuthorSummaryDto author, PostAnalyticsDto analytics)
+        : this(id, title, slug, summary, content, url, status, isPublished, isDeleted, deletedAt, publishedAt, createdAt, author, analytics, null, null, null, false)
     {
     }
 }

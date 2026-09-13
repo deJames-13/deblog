@@ -119,7 +119,13 @@
         <!-- Author & Metric Strip -->
         <div class="pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-dim)]">
           <div class="flex items-center gap-2">
-            <app-author-avatar [name]="profile().name" [avatarUrl]="profile().avatar_url" size="sm" />
+            <app-author-avatar
+              [name]="profile().name"
+              [avatarUrl]="profile().avatar_url"
+              size="sm"
+              [showStatus]="true"
+              [isOnline]="isAuthorOnline()"
+            />
             <div>
               <span class="font-bold text-[var(--text-primary)] block leading-none">{{ profile().name }}</span>
               <span class="text-[10px] text-[var(--text-dim)]">{{ profile().role }}</span>
@@ -152,8 +158,26 @@
         </div>
       }
 
-      <!-- Markdown Body -->
-      <app-markdown-renderer [content]="post.content" />
+      <!-- Markdown Body with 5 Mandatory States -->
+      @if (isDetailLoading() || !post.content) {
+        <div
+          role="status"
+          aria-live="polite"
+          class="p-8 my-4 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col items-center justify-center gap-3 text-center min-h-[220px]"
+        >
+          <div class="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--accent-terminal)] animate-spin"></div>
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wider font-bold text-[var(--accent-terminal)] font-mono-bios">
+              BUFFERING_ESSAY_BODY...
+            </p>
+            <p class="text-[10px] text-[var(--text-dim)] font-mono-bios">
+              Streaming markdown payload from server
+            </p>
+          </div>
+        </div>
+      } @else {
+        <app-markdown-renderer [content]="post.content" />
+      }
 
       <!-- Post Tags -->
       @if (post.tags.length > 0) {
@@ -170,9 +194,14 @@
         </div>
       }
 
-      <!-- Author Card Footer -->
       <div class="mt-8 p-4 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] font-mono-bios flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <app-author-avatar [name]="profile().name" [avatarUrl]="profile().avatar_url" size="lg" />
+        <app-author-avatar
+          [name]="profile().name"
+          [avatarUrl]="profile().avatar_url"
+          size="lg"
+          [showStatus]="true"
+          [isOnline]="isAuthorOnline()"
+        />
         <div class="space-y-1 flex-1 min-w-0">
           <div class="font-bold text-xs text-[var(--text-primary)]">
             {{ profile().name }}

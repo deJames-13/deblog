@@ -69,6 +69,7 @@ export class AdminPostsComponent implements OnInit {
   readonly editorPreview = signal<boolean>(false);
   readonly showMediaPicker = signal<boolean>(false);
   readonly tagsInput = signal<string>('');
+  readonly isLoadingContent = signal<boolean>(false);
 
   readonly filteredPosts = computed(() => {
     const filter = this.activeFilter();
@@ -101,6 +102,7 @@ export class AdminPostsComponent implements OnInit {
     this.tagsInput.set('Enterprise, Architecture');
     this.isCreating.set(true);
     this.editorPreview.set(false);
+    this.isLoadingContent.set(false);
   }
 
   startEdit(post: BlogPost): void {
@@ -108,12 +110,37 @@ export class AdminPostsComponent implements OnInit {
     this.tagsInput.set((post.tags || []).join(', '));
     this.isCreating.set(false);
     this.editorPreview.set(false);
+
+    // Fetch full post markdown content and details from backend
+    if (post.id) {
+      this.isLoadingContent.set(true);
+      this.blogService
+        .fetchPostDetail(post.id)
+        .then((fullPost) => {
+          if (fullPost && this.editingPost()?.id === post.id) {
+            this.editingPost.update((current) =>
+              current
+                ? {
+                    ...current,
+                    content: fullPost.content,
+                    subtitle: fullPost.subtitle || current.subtitle,
+                    excerpt: fullPost.excerpt || current.excerpt,
+                  }
+                : null
+            );
+          }
+        })
+        .finally(() => {
+          this.isLoadingContent.set(false);
+        });
+    }
   }
 
   cancelEdit(): void {
     this.editingPost.set(null);
     this.isCreating.set(false);
     this.editorPreview.set(false);
+    this.isLoadingContent.set(false);
   }
 
   savePost(publishImmediately: boolean = false): void {

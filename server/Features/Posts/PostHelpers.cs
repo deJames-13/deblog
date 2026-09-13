@@ -20,6 +20,7 @@ public static class PostHelpers
             p.Title,
             p.Slug,
             p.Summary,
+            p.Content,
             $"{baseUrl}/posts/{p.Slug}",
             p.Status,
             p.IsPublished,
