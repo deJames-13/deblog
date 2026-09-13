@@ -52,11 +52,17 @@ Modern, high-performance blog backend built with **ASP.NET Core (.NET 10)**, **V
 ### Posts (`/api/posts`)
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/posts` | Public / Admin | List posts (pagination, search; admin sees drafts) |
-| `GET` | `/api/posts/{idOrSlug}` | Public / Admin | Get post by ID or Slug with canonical URL and analytics |
-| `POST` | `/api/posts` | **Admin Only** | Create blog post |
-| `PUT` | `/api/posts/{id}` | **Admin Only** | Update blog post |
-| `DELETE` | `/api/posts/{id}` | **Admin Only** | Delete blog post |
+| `GET` | `/api/posts` | Public / Admin | List non-deleted posts (pagination, status filter, search; public sees only `Published`) |
+| `GET` | `/api/posts/{idOrSlug}` | Public / Admin | Get post by ID or Slug with canonical URL and analytics (public sees only `Published`) |
+| `GET` | `/api/posts/trash` | **Admin Only** | List soft-deleted posts in the Trash bin |
+| `POST` | `/api/posts` | **Admin Only** | Create blog post as `Draft` or `Published` |
+| `PUT` | `/api/posts/{id}` | **Admin Only** | Update post title, slug, summary, content, or status |
+| `PATCH`| `/api/posts/{id}/status` | **Admin Only** | Transition post status (`Draft`, `Published`, `Hidden`, `Archived`) |
+| `POST` | `/api/posts/{id}/hide` | **Admin Only** | Convenience action: set status to `Hidden` |
+| `POST` | `/api/posts/{id}/archive` | **Admin Only** | Convenience action: set status to `Archived` |
+| `DELETE`| `/api/posts/{id}` | **Admin Only** | Soft-delete: move post to Trash |
+| `POST` | `/api/posts/{id}/restore` | **Admin Only** | Restore post from Trash back to active |
+| `DELETE`| `/api/posts/{id}/force` | **Admin Only** | Permanently purge post from database |
 | `POST` | `/api/posts/{idOrSlug}/analytics/view` | Public | Increment views (visitor cooldown deduplicated) |
 | `POST` | `/api/posts/{idOrSlug}/analytics/like` | Public | Increment likes (visitor cooldown deduplicated) |
 | `POST` | `/api/posts/{idOrSlug}/analytics/share` | Public | Increment shares |

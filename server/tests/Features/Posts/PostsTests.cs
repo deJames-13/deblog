@@ -121,4 +121,145 @@ public class PostsTests : IClassFixture<TestWebApplicationFactory>
         var getDeleted = await adminClient.GetAsync($"/api/posts/{post.Id}");
         Assert.Equal(HttpStatusCode.NotFound, getDeleted.StatusCode);
     }
+
+    [Fact]
+    public async Task Admin_CanCreatePost_AsDraft_AndPublicCannotSeeIt()
+    {
+        // Arrange
+        var adminClient = _factory.CreateAdminClient();
+        var title = $"Draft Post {Guid.NewGuid().ToString()[..6]}";
+        var createRequest = new CreatePostRequest(title, null, "Draft Summary", "Draft Content", PostStatus.Draft);
+
+        // Act 1 - Admin creates Draft post
+        var createResponse = await adminClient.PostAsJsonAsync("/api/posts", createRequest);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        var post = await createResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.NotNull(post);
+        Assert.Equal(PostStatus.Draft, post.Status);
+        Assert.False(post.IsPublished);
+
+        // Act 2 - Anonymous user cannot view the draft post by slug
+        var anonClient = _factory.CreateAnonymousClient();
+        var anonGet = await anonClient.GetAsync($"/api/posts/{post.Slug}");
+        Assert.Equal(HttpStatusCode.NotFound, anonGet.StatusCode);
+
+        // Act 3 - Anonymous user does not see it in the public list
+        var anonList = await anonClient.GetFromJsonAsync<PagedResult<PostListItemDto>>("/api/posts");
+        Assert.NotNull(anonList);
+        Assert.DoesNotContain(anonList.Items, p => p.Id == post.Id);
+
+        // Act 4 - Admin CAN view the draft post
+        var adminGet = await adminClient.GetAsync($"/api/posts/{post.Slug}");
+        Assert.Equal(HttpStatusCode.OK, adminGet.StatusCode);
+
+        // Act 5 - Admin CAN filter list by Draft status
+        var adminList = await adminClient.GetFromJsonAsync<PagedResult<PostListItemDto>>("/api/posts?status=0");
+        Assert.NotNull(adminList);
+        Assert.Contains(adminList.Items, p => p.Id == post.Id);
+    }
+
+    [Fact]
+    public async Task Admin_CanTransitionPostStatus_Draft_To_Published_To_Hidden_To_Archived()
+    {
+        // Arrange
+        var adminClient = _factory.CreateAdminClient();
+        var anonClient = _factory.CreateAnonymousClient();
+        var title = $"Lifecycle Post {Guid.NewGuid().ToString()[..6]}";
+        var createResponse = await adminClient.PostAsJsonAsync("/api/posts",
+            new CreatePostRequest(title, null, "Summary", "Content", PostStatus.Draft));
+        var post = await createResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.NotNull(post);
+
+        // Transition: Draft -> Published via PATCH /api/posts/{id}/status
+        var publishResponse = await adminClient.PatchAsJsonAsync($"/api/posts/{post.Id}/status",
+            new UpdatePostStatusRequest(PostStatus.Published));
+        Assert.Equal(HttpStatusCode.OK, publishResponse.StatusCode);
+        var publishedPost = await publishResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.Equal(PostStatus.Published, publishedPost!.Status);
+        Assert.True(publishedPost.IsPublished);
+        Assert.NotNull(publishedPost.PublishedAt);
+
+        // Public visitor can now view it
+        var publicGet = await anonClient.GetAsync($"/api/posts/{post.Slug}");
+        Assert.Equal(HttpStatusCode.OK, publicGet.StatusCode);
+
+        // Transition: Published -> Hidden via POST /api/posts/{id}/hide
+        var hideResponse = await adminClient.PostAsync($"/api/posts/{post.Id}/hide", null);
+        Assert.Equal(HttpStatusCode.OK, hideResponse.StatusCode);
+        var hiddenPost = await hideResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.Equal(PostStatus.Hidden, hiddenPost!.Status);
+
+        // Public visitor can no longer view it
+        var hiddenPublicGet = await anonClient.GetAsync($"/api/posts/{post.Slug}");
+        Assert.Equal(HttpStatusCode.NotFound, hiddenPublicGet.StatusCode);
+
+        // Transition: Hidden -> Archived via POST /api/posts/{id}/archive
+        var archiveResponse = await adminClient.PostAsync($"/api/posts/{post.Id}/archive", null);
+        Assert.Equal(HttpStatusCode.OK, archiveResponse.StatusCode);
+        var archivedPost = await archiveResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.Equal(PostStatus.Archived, archivedPost!.Status);
+
+        // Public visitor still cannot view it
+        var archivedPublicGet = await anonClient.GetAsync($"/api/posts/{post.Slug}");
+        Assert.Equal(HttpStatusCode.NotFound, archivedPublicGet.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_CanSoftDelete_ListInTrash_Restore_AndForceDeletePost()
+    {
+        // Arrange
+        var adminClient = _factory.CreateAdminClient();
+        var anonClient = _factory.CreateAnonymousClient();
+        var title = $"Trash Lifecycle Post {Guid.NewGuid().ToString()[..6]}";
+        var createResponse = await adminClient.PostAsJsonAsync("/api/posts",
+            new CreatePostRequest(title, null, "Summary", "Content", PostStatus.Published));
+        var post = await createResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.NotNull(post);
+
+        // Act 1 - Soft Delete via DELETE /api/posts/{id}
+        var softDeleteResponse = await adminClient.DeleteAsync($"/api/posts/{post.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, softDeleteResponse.StatusCode);
+
+        // Act 2 - Verify it is excluded from normal queries (admin & public)
+        var getPost = await adminClient.GetAsync($"/api/posts/{post.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, getPost.StatusCode);
+
+        var listPosts = await adminClient.GetFromJsonAsync<PagedResult<PostListItemDto>>("/api/posts");
+        Assert.DoesNotContain(listPosts!.Items, p => p.Id == post.Id);
+
+        // Act 3 - Verify anonymous cannot view trash
+        var anonTrash = await anonClient.GetAsync("/api/posts/trash");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonTrash.StatusCode);
+
+        // Act 4 - Admin lists Trash and finds the post
+        var trashResponse = await adminClient.GetFromJsonAsync<PagedResult<TrashPostItemDto>>("/api/posts/trash");
+        Assert.NotNull(trashResponse);
+        var trashItem = trashResponse.Items.FirstOrDefault(p => p.Id == post.Id);
+        Assert.NotNull(trashItem);
+        Assert.NotNull(trashItem.DeletedAt);
+
+        // Act 5 - Restore post via POST /api/posts/{id}/restore
+        var restoreResponse = await adminClient.PostAsync($"/api/posts/{post.Id}/restore", null);
+        Assert.Equal(HttpStatusCode.OK, restoreResponse.StatusCode);
+        var restoredPost = await restoreResponse.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.NotNull(restoredPost);
+        Assert.False(restoredPost.IsDeleted);
+        Assert.Null(restoredPost.DeletedAt);
+        Assert.Equal(PostStatus.Published, restoredPost.Status);
+
+        // Post is now accessible again
+        var getRestored = await adminClient.GetAsync($"/api/posts/{post.Id}");
+        Assert.Equal(HttpStatusCode.OK, getRestored.StatusCode);
+
+        // Act 6 - Force Delete via DELETE /api/posts/{id}/force
+        var forceDeleteResponse = await adminClient.DeleteAsync($"/api/posts/{post.Id}/force");
+        Assert.Equal(HttpStatusCode.NoContent, forceDeleteResponse.StatusCode);
+
+        // Act 7 - Verify completely purged from DB
+        var getPurged = await adminClient.GetAsync($"/api/posts/{post.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, getPurged.StatusCode);
+
+        var trashAfterPurge = await adminClient.GetFromJsonAsync<PagedResult<TrashPostItemDto>>("/api/posts/trash");
+        Assert.DoesNotContain(trashAfterPurge!.Items, p => p.Id == post.Id);
+    }
 }

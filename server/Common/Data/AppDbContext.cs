@@ -52,6 +52,11 @@ public class AppDbContext : DbContext
             builder.Property(p => p.Slug).HasMaxLength(300).IsRequired();
             builder.Property(p => p.Summary).HasMaxLength(500);
             builder.Property(p => p.Content).IsRequired();
+            builder.Property(p => p.Status).HasConversion<int>().HasDefaultValue(PostStatus.Draft);
+            builder.Property(p => p.IsDeleted).HasDefaultValue(false);
+
+            builder.HasIndex(p => p.Status);
+            builder.HasIndex(p => p.IsDeleted);
 
             builder.HasOne(p => p.Author)
                 .WithMany(u => u.Posts)
