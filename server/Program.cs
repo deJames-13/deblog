@@ -21,6 +21,15 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: true));
 });
 
+// Configure Forwarded Headers for reverse proxies (Render / Cloudflare)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                               Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // 3. Database (EF Core + Npgsql)
 builder.Services.AddDatabase(builder.Configuration);
 
@@ -39,16 +48,52 @@ builder.Services.AddConfiguredSwagger();
 // 7. CORS Configuration
 var allowedOrigins = builder.Configuration["CORS_ORIGINS"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(o => o.TrimEnd('/'))
+    .ToArray()
     ?? new[] { "http://localhost:4200", "http://localhost:3000", "http://localhost:5173" };
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DeblogCorsPolicy", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+
+            try
+            {
+                var uri = new Uri(origin);
+                var host = uri.Host.ToLowerInvariant();
+
+                // Local development origins
+                if (host == "localhost" || host == "127.0.0.1") return true;
+
+                // User's custom domain & subdomains (e.g. deblog.derickespinosa.site)
+                if (host == "deblog.derickespinosa.site" || host.EndsWith(".derickespinosa.site")) return true;
+
+                // Vercel deployment preview / production URLs (*.vercel.app)
+                if (host.EndsWith(".vercel.app")) return true;
+
+                // Explicitly configured origins from CORS_ORIGINS environment variable
+                var cleanOrigin = origin.TrimEnd('/');
+                return allowedOrigins.Any(o =>
+                {
+                    if (o.Contains('*'))
+                    {
+                        var pattern = "^" + System.Text.RegularExpressions.Regex.Escape(o).Replace(@"\*", ".*") + "$";
+                        return System.Text.RegularExpressions.Regex.IsMatch(cleanOrigin, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    }
+                    return string.Equals(o, cleanOrigin, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -58,6 +103,7 @@ var app = builder.Build();
 await app.SeedMainAuthorAsync();
 
 // 9. Request Pipeline Configuration
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseRequestLogging();
 
