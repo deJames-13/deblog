@@ -41,6 +41,11 @@ public class AppDbContext : DbContext
             builder.Property(u => u.Bio).HasMaxLength(500);
             builder.Property(u => u.AvatarUrl).HasMaxLength(512);
             builder.Property(u => u.Role).HasMaxLength(32).HasDefaultValue(UserRoles.Guest);
+            builder.Property(u => u.Status).HasConversion<int>().HasDefaultValue(UserStatus.Active);
+            builder.Property(u => u.IsDeleted).HasDefaultValue(false);
+
+            builder.HasIndex(u => u.Status);
+            builder.HasIndex(u => u.IsDeleted);
         });
 
         // Post configuration
@@ -83,8 +88,11 @@ public class AppDbContext : DbContext
             builder.Property(c => c.Content).HasMaxLength(2000).IsRequired();
             builder.Property(c => c.Status).HasConversion<int>().HasDefaultValue(CommentStatus.Pending);
             builder.Property(c => c.ManagementToken).IsRequired();
+            builder.Property(c => c.IsDeleted).HasDefaultValue(false);
+
             builder.HasIndex(c => c.ManagementToken);
             builder.HasIndex(c => c.Status);
+            builder.HasIndex(c => c.IsDeleted);
 
             builder.HasOne(c => c.Post)
                 .WithMany(p => p.Comments)

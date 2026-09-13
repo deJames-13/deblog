@@ -15,8 +15,8 @@ export const routes: Routes = [
   },
   {
     path: 'admin-auth',
-    loadComponent: () =>
-      import('./admin/admin-auth/admin-auth.component').then((m) => m.AdminAuthComponent),
+    redirectTo: 'admin',
+    pathMatch: 'full',
   },
   {
     path: 'admin',

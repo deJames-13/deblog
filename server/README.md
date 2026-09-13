@@ -67,26 +67,33 @@ Modern, high-performance blog backend built with **ASP.NET Core (.NET 10)**, **V
 | `POST` | `/api/posts/{idOrSlug}/analytics/like` | Public | Increment likes (visitor cooldown deduplicated) |
 | `POST` | `/api/posts/{idOrSlug}/analytics/share` | Public | Increment shares |
 
-### Comments (`/api/posts/{postId}/comments` & `/api/comments`)
+### Comments (`/api/posts/{postId}/comments`, `/api/comments`, & `/api/admin/comments`)
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/posts/{postId}/comments` | Public | Get approved comments for post |
-| `POST` | `/api/posts/{postId}/comments` | Public / Guest | Post guest comment (returns `managementToken`) |
-| `PUT` | `/api/comments/{id}` | Guest Token / Admin | Update comment content (`X-Comment-Token`) |
-| `DELETE` | `/api/comments/{id}` | Guest Token / Admin | Guest: soft remove (`Removed`); Admin: permanent delete |
-| `GET` | `/api/admin/comments` | **Admin Only** | Moderation queue (filter by `status=pending/approved/removed`) |
-| `PATCH` | `/api/admin/comments/{id}/status` | **Admin Only** | Change comment status (`Approved`, `Pending`, `Removed`) |
+| `GET` | `/api/posts/{postId}/comments` | Public | Get approved, non-deleted comments for post |
+| `POST` | `/api/posts/{postId}/comments` | Public / Guest | Post guest comment (returns `managementToken`; blocks suspended/banned users) |
+| `PUT` | `/api/comments/{id}` | Guest Token / Admin | Update comment content (`X-Comment-Token` header or Admin auth) |
+| `DELETE`| `/api/comments/{id}` | Guest Token / Admin | Soft-delete: move comment to Trash, replace content with placeholder |
+| `GET` | `/api/admin/comments` | **Admin Only** | Moderation queue (filter by `status=Pending/Approved/Rejected/Spam`, excludes deleted) |
+| `GET` | `/api/admin/comments/trash` | **Admin Only** | List soft-deleted comments in the Trash bin |
+| `PATCH`| `/api/admin/comments/{id}/status` | **Admin Only** | Moderate comment status (`Pending`, `Approved`, `Rejected`, `Spam`) |
+| `POST` | `/api/admin/comments/{id}/restore` | **Admin Only** | Restore soft-deleted comment from Trash |
+| `DELETE`| `/api/admin/comments/{id}/force` | **Admin Only** | Permanently delete comment from database |
 
 ### Users (`/api/users` & `/api/admin/users`)
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/users/me` | Authenticated | Get or provision current user profile |
-| `PUT` | `/api/users/me` | Authenticated | Update current user profile |
-| `GET` | `/api/users/{id}` | Public | Get public profile |
-| `GET` | `/api/admin/users` | **Admin Only** | List all users (paginated, search, filter by role) |
-| `POST` | `/api/admin/users` | **Admin Only** | Create user account |
-| `PUT` | `/api/admin/users/{id}` | **Admin Only** | Update user account details or role |
-| `DELETE` | `/api/admin/users/{id}` | **Admin Only** | Delete user account |
+| `GET` | `/api/users/me` | Authenticated | Get or provision current user profile (403 if Suspended/Banned/Deleted) |
+| `PUT` | `/api/users/me` | Authenticated | Update current user profile (403 if Suspended/Banned/Deleted) |
+| `GET` | `/api/users/{id}` | Public | Get public profile by ID (excludes deleted) |
+| `GET` | `/api/admin/users` | **Admin Only** | List users (paginated, search, filter by role & status, excludes deleted) |
+| `GET` | `/api/admin/users/trash` | **Admin Only** | List soft-deleted user accounts in the Trash bin |
+| `POST` | `/api/admin/users` | **Admin Only** | Create user account with initial status |
+| `PUT` | `/api/admin/users/{id}` | **Admin Only** | Update user account details, role, or status |
+| `PATCH`| `/api/admin/users/{id}/status` | **Admin Only** | Transition user status (`Active`, `Suspended`, `Banned`) |
+| `DELETE`| `/api/admin/users/{id}` | **Admin Only** | Soft-delete user account (prevents self-deletion) |
+| `POST` | `/api/admin/users/{id}/restore` | **Admin Only** | Restore soft-deleted user account from Trash |
+| `DELETE`| `/api/admin/users/{id}/force` | **Admin Only** | Permanently purge user account from database (prevents self-deletion) |
 
 ---
 

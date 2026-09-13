@@ -15,6 +15,8 @@ public static class GetPostsEndpoint
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
             [FromQuery] string? search,
+            [FromQuery] string? category,
+            [FromQuery] string? tag,
             [FromQuery] Guid? authorId,
             [FromQuery] PostStatus? status,
             [FromQuery] bool? publishedOnly,
@@ -27,51 +29,61 @@ public static class GetPostsEndpoint
             var baseUrl = (config["APP_BASE_URL"] ?? "http://localhost:4200").TrimEnd('/');
             var isAdmin = user.IsAdmin(config);
 
-            var query = db.Posts
+            var baseQuery = db.Posts
                 .AsNoTracking()
-                .Include(p => p.Author)
-                .Include(p => p.Analytics)
-                .Include(p => p.Comments)
-                .Where(p => !p.IsDeleted)
-                .AsQueryable();
+                .Where(p => !p.IsDeleted);
 
             if (!isAdmin)
             {
                 // Public visitors only see published posts
-                query = query.Where(p => p.Status == PostStatus.Published);
+                baseQuery = baseQuery.Where(p => p.Status == PostStatus.Published);
             }
             else
             {
                 // Admin can filter by specific status
                 if (status.HasValue)
                 {
-                    query = query.Where(p => p.Status == status.Value);
+                    baseQuery = baseQuery.Where(p => p.Status == status.Value);
                 }
                 else if (publishedOnly == true)
                 {
-                    query = query.Where(p => p.Status == PostStatus.Published);
+                    baseQuery = baseQuery.Where(p => p.Status == PostStatus.Published);
                 }
             }
 
             if (authorId.HasValue)
             {
-                query = query.Where(p => p.AuthorId == authorId.Value);
+                baseQuery = baseQuery.Where(p => p.AuthorId == authorId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                var catTerm = category.Trim().ToLower();
+                baseQuery = baseQuery.Where(p => p.Category != null && p.Category.ToLower() == catTerm);
+            }
+
+            if (!string.IsNullOrWhiteSpace(tag))
+            {
+                var tagTerm = tag.Trim().ToLower();
+                baseQuery = baseQuery.Where(p => p.Tags.Any(t => t.ToLower() == tagTerm));
             }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim().ToLower();
-                query = query.Where(p => p.Title.ToLower().Contains(term) ||
+                baseQuery = baseQuery.Where(p => p.Title.ToLower().Contains(term) ||
                                          (p.Summary != null && p.Summary.ToLower().Contains(term)));
             }
 
-            var totalCount = await query.CountAsync(ct);
+            var totalCount = await baseQuery.CountAsync(ct);
             var totalPages = (int)Math.Ceiling(totalCount / (double)currentLimit);
 
-            var posts = await query
+            var posts = await baseQuery
                 .OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
                 .Skip((currentPage - 1) * currentLimit)
                 .Take(currentLimit)
+                .Include(p => p.Author)
+                .Include(p => p.Analytics)
                 .Select(p => PostHelpers.ToListItemDto(p, baseUrl))
                 .ToListAsync(ct);
 

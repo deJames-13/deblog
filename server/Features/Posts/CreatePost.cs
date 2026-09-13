@@ -31,20 +31,15 @@ public static class CreatePostEndpoint
                 return Results.BadRequest(new { message = "Content is required" });
             }
 
-            // Find or associate the Author
-            User? author = null;
-            if (userId.HasValue)
-            {
-                author = await db.Users.FirstOrDefaultAsync(u => u.Id == userId.Value, ct);
-            }
-            if (author == null && !string.IsNullOrWhiteSpace(userEmail))
-            {
-                author = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == userEmail.ToLower(), ct);
-            }
-            if (author == null)
-            {
-                author = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRoles.Admin, ct);
-            }
+            // Find or associate the Author in a single efficient query
+            var normalizedEmail = userEmail?.Trim().ToLowerInvariant();
+            var author = await db.Users
+                .Where(u => (userId.HasValue && u.Id == userId.Value) ||
+                            (normalizedEmail != null && u.Email.ToLower() == normalizedEmail) ||
+                            u.Role == UserRoles.Admin)
+                .OrderByDescending(u => userId.HasValue && u.Id == userId.Value)
+                .ThenByDescending(u => normalizedEmail != null && u.Email.ToLower() == normalizedEmail)
+                .FirstOrDefaultAsync(ct);
 
             if (author == null)
             {
@@ -55,11 +50,20 @@ public static class CreatePostEndpoint
                 ? PostHelpers.GenerateSlug(request.Slug)
                 : PostHelpers.GenerateSlug(request.Title);
 
+            var existingSlugs = await db.Posts
+                .Where(p => p.Slug == baseSlug || p.Slug.StartsWith(baseSlug + "-"))
+                .Select(p => p.Slug)
+                .ToListAsync(ct);
+
             var slug = baseSlug;
-            var slugSuffix = 1;
-            while (await db.Posts.AnyAsync(p => p.Slug == slug, ct))
+            if (existingSlugs.Contains(baseSlug))
             {
-                slug = $"{baseSlug}-{slugSuffix++}";
+                var suffix = 1;
+                while (existingSlugs.Contains($"{baseSlug}-{suffix}"))
+                {
+                    suffix++;
+                }
+                slug = $"{baseSlug}-{suffix}";
             }
 
             // Determine status (support both Status and legacy IsPublished flag)
@@ -79,6 +83,10 @@ public static class CreatePostEndpoint
                 Content = request.Content,
                 Status = status,
                 PublishedAt = status == PostStatus.Published ? now : null,
+                CoverImageUrl = request.CoverImageUrl?.Trim(),
+                Category = request.Category?.Trim(),
+                Tags = request.Tags ?? [],
+                IsFeatured = request.IsFeatured,
                 AuthorId = author.Id,
                 Author = author,
                 IsDeleted = false,

@@ -3,6 +3,7 @@ import { LucideMessageSquare, LucideMinimize2 } from '@lucide/angular';
 import { BlogService } from './core/services/blog.service';
 import { ToastComponent } from './common/toast/toast.component';
 import { HelpModalComponent } from './common/help-modal/help-modal.component';
+import { ConfirmModalComponent } from './common/confirm-modal/confirm-modal.component';
 import { CommentModalComponent } from './guest/comment-modal/comment-modal.component';
 import { TopbarComponent } from './common/topbar/topbar.component';
 import { FooterComponent } from './common/footer/footer.component';
@@ -13,6 +14,7 @@ import { PostDetailViewComponent } from './guest/post-detail/post-detail-view.co
 import { ZenReaderComponent } from './guest/zen-reader/zen-reader.component';
 import { AdminAuthComponent } from './admin/admin-auth/admin-auth.component';
 import { AdminLayoutComponent } from './admin/admin-layout/admin-layout.component';
+import { AdminSkeletonComponent } from './admin/admin-skeleton/admin-skeleton.component';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +22,7 @@ import { AdminLayoutComponent } from './admin/admin-layout/admin-layout.componen
     ToastComponent,
     HelpModalComponent,
     CommentModalComponent,
+    ConfirmModalComponent,
     TopbarComponent,
     FooterComponent,
     FKeyBarComponent,
@@ -29,6 +32,7 @@ import { AdminLayoutComponent } from './admin/admin-layout/admin-layout.componen
     ZenReaderComponent,
     AdminAuthComponent,
     AdminLayoutComponent,
+    AdminSkeletonComponent,
     LucideMinimize2,
     LucideMessageSquare,
   ],
@@ -43,6 +47,7 @@ export class App {
   readonly sidebarOpen = this.blogService.sidebarOpen;
   readonly currentRoute = this.blogService.currentRoute;
   readonly isAdmin = this.blogService.isAdmin;
+  readonly isCheckingAuth = this.blogService.isCheckingAuth;
 
   readonly fontClass = computed(() => `font-${this.font()}`);
 

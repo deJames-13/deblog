@@ -25,6 +25,13 @@ export class LandingViewComponent {
   readonly selectedMonth = this.blogService.selectedMonth;
   readonly currentPage = this.blogService.currentPage;
   readonly profile = this.blogService.profile;
+  readonly isLoading = this.blogService.isLoading;
+  readonly isOfflineFallback = this.blogService.isOfflineFallback;
+  readonly apiError = this.blogService.apiError;
+
+  refreshData(): void {
+    this.blogService.loadInitialData();
+  }
 
   readonly postsPerPage = 4;
 

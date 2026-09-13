@@ -56,7 +56,7 @@
           [class.hover:border-[var(--border-color)]]="!isActive"
           [class.hover:text-[var(--text-primary)]]="!isActive"
           [class.hover:bg-[var(--bg-highlight)]]="!isActive"
-          [title]="item.label + ' — ' + item.desc"
+          [appTooltip]="item.desc"
           [attr.aria-label]="item.label"
           [attr.aria-current]="isActive ? 'page' : null"
         >
@@ -143,7 +143,8 @@
       type="button"
       (click)="navigateToLanding()"
       class="w-full flex items-center justify-center gap-1.5 p-2 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--text-primary)] text-xs cursor-pointer transition-colors"
-      title="Return to Public View [F1]"
+      appTooltip="Return to Public View [F1]"
+      tooltipPosition="top"
     >
       <svg lucideExternalLink class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
       <span>PUBLIC VIEW [F1]</span>
@@ -153,7 +154,8 @@
       type="button"
       (click)="logout()"
       class="w-full flex items-center justify-center gap-1.5 p-2 bg-[var(--bg-surface)] border border-[var(--accent-fkey)] text-[var(--accent-fkey)] hover:bg-[var(--accent-fkey)] hover:text-white text-xs cursor-pointer transition-colors"
-      title="Terminate Admin Session"
+      appTooltip="Terminate Administrator Session [F8]"
+      tooltipPosition="top"
     >
       <svg lucideLogOut class="w-3.5 h-3.5"></svg>
       <span>TERMINATE SESSION</span>

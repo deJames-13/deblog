@@ -11,9 +11,12 @@ import {
 import { BlogService } from '../../core/services/blog.service';
 import { AdminTab, CommentStatus } from '../../core/models/blog.model';
 
+import { TooltipDirective } from '../../common/tooltip/tooltip.directive';
+
 @Component({
   selector: 'app-dashboard-home',
   imports: [
+    TooltipDirective,
     LucideFileText,
     LucideMessageSquare,
     LucideEye,

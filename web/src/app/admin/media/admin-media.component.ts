@@ -9,11 +9,14 @@ import {
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
 import { MediaItem } from '../../core/models/blog.model';
+import { ConfirmDialogService } from '../../common/confirm-modal/confirm-modal.service';
+import { TooltipDirective } from '../../common/tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-admin-media',
   imports: [
     FormsModule,
+    TooltipDirective,
     LucideUploadCloud,
     LucideCopy,
     LucideTrash2,
@@ -24,6 +27,7 @@ import { MediaItem } from '../../core/models/blog.model';
 })
 export class AdminMediaComponent {
   private readonly blogService = inject(BlogService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly media = this.blogService.media;
 
@@ -127,8 +131,16 @@ export class AdminMediaComponent {
     }
   }
 
-  deleteMedia(id: string, filename: string): void {
-    if (window.confirm(`Delete media asset "${filename}"?`)) {
+  async deleteMedia(id: string, filename: string): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'DELETE_MEDIA_ASSET',
+      message: `Are you sure you want to delete media asset "${filename}"?`,
+      details: 'This file will be permanently removed from storage and cannot be recovered.',
+      confirmText: 'DELETE ASSET',
+      cancelText: 'CANCEL',
+      tone: 'danger',
+    });
+    if (confirmed) {
       this.blogService.deleteMedia(id);
     }
   }

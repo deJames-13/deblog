@@ -13,11 +13,13 @@ import {
 import { BlogService } from '../../../core/services/blog.service';
 import { AdminTab } from '../../../core/models/blog.model';
 import { AuthorAvatarComponent } from '../../../common/author-avatar/author-avatar.component';
+import { TooltipDirective } from '../../../common/tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-admin-sidebar',
   imports: [
     AuthorAvatarComponent,
+    TooltipDirective,
     LucideLayoutDashboard,
     LucideFileText,
     LucideUsers,

@@ -192,6 +192,8 @@
                   type="button"
                   (click)="updateCommentStatus(c.id, 'approved')"
                   class="px-2 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-[10px] cursor-pointer"
+                  appTooltip="Approve Comment Immediately"
+                  tooltipPosition="top"
                 >
                   Approve
                 </button>
@@ -199,6 +201,8 @@
                   type="button"
                   (click)="updateCommentStatus(c.id, 'rejected')"
                   class="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-dim)] hover:text-[var(--text-primary)] text-[10px] cursor-pointer"
+                  appTooltip="Reject Comment"
+                  tooltipPosition="top"
                 >
                   Reject
                 </button>

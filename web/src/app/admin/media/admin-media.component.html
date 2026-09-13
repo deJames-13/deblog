@@ -176,7 +176,8 @@
                 type="button"
                 (click)="deleteMedia(item.id, item.filename)"
                 class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer transition-colors"
-                title="Remove Asset"
+                appTooltip="Permanently remove asset"
+                tooltipPosition="top"
                 aria-label="Remove Asset"
               >
                 <svg lucideTrash2 class="w-3.5 h-3.5"></svg>

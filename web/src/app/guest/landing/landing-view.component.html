@@ -1,4 +1,25 @@
 <div id="landing-view-container" class="space-y-4">
+  <!-- Offline Cache Mode Indicator Banner -->
+  @if (isOfflineFallback()) {
+    <div
+      role="status"
+      class="px-3.5 py-2 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[11px] flex items-center justify-between font-mono-bios"
+    >
+      <div class="flex items-center gap-2 text-[var(--text-dim)]">
+        <span class="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" aria-hidden="true"></span>
+        <span class="text-[var(--text-primary)] font-medium">OFFLINE REPOSITORY MODE</span>
+        <span class="hidden sm:inline">&bull; Backend unreachable; serving local cache</span>
+      </div>
+      <button
+        type="button"
+        (click)="refreshData()"
+        class="px-2.5 py-1 border border-[var(--border-color)] hover:border-[var(--accent-terminal)] hover:text-[var(--accent-terminal)] text-[10px] uppercase font-bold cursor-pointer transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-terminal)]"
+      >
+        Retry Live Sync
+      </button>
+    </div>
+  }
+
   <!-- Search Bar & Active Filter Banner (Separated Component) -->
   <app-search-filter-bar
     [searchQuery]="searchQuery()"
@@ -12,8 +33,44 @@
     (clearAllFilters)="clearAllFilters()"
   />
 
-  <!-- Articles List or Empty State -->
-  @if (filteredPosts().length === 0) {
+  <!-- Loading State: Skeleton Cards -->
+  @if (isLoading()) {
+    <div class="space-y-3 font-mono-bios" aria-busy="true" aria-label="Loading articles...">
+      @for (item of [1, 2, 3]; track item) {
+        <div class="p-4 bg-[var(--bg-surface)] border border-[var(--border-color)] animate-pulse space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-16 h-3 bg-[var(--border-color)]"></div>
+            <div class="w-24 h-3 bg-[var(--border-color)]"></div>
+          </div>
+          <div class="w-3/4 h-5 bg-[var(--border-color)]"></div>
+          <div class="space-y-1.5">
+            <div class="w-full h-3 bg-[var(--border-color)]/60"></div>
+            <div class="w-5/6 h-3 bg-[var(--border-color)]/60"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (apiError() && filteredPosts().length === 0) {
+    <!-- Error State with Actionable Recovery -->
+    <div
+      role="alert"
+      class="p-8 text-center bg-[var(--bg-surface)] border border-red-500/30 text-red-400 font-mono-bios space-y-3"
+    >
+      <div class="font-bold text-xs uppercase tracking-wider">[CONNECTION_FAULT]</div>
+      <p class="text-xs max-w-md mx-auto text-[var(--text-dim)]">
+        {{ apiError() }}
+      </p>
+      <div class="pt-2">
+        <button
+          type="button"
+          (click)="refreshData()"
+          class="px-4 py-2 border border-red-500/50 hover:bg-red-500/10 text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-red-400"
+        >
+          Retry Connection
+        </button>
+      </div>
+    </div>
+  } @else if (filteredPosts().length === 0) {
     <!-- Empty State (Separated Component) -->
     <app-empty-state
       [hasActiveFilters]="hasActiveFilters()"

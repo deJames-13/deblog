@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace deblog.Server.Features.Users;
 
+[method: JsonConstructor]
 public record UserProfileDto(
     Guid Id,
     string Email,
@@ -8,6 +11,35 @@ public record UserProfileDto(
     string? Bio,
     string? AvatarUrl,
     string Role,
+    UserStatus Status,
+    bool IsDeleted,
+    DateTime? DeletedAt,
+    DateTime CreatedAt
+)
+{
+    // Convenience constructor for backward compatibility with 8 arguments
+    public UserProfileDto(
+        Guid id,
+        string email,
+        string username,
+        string? displayName,
+        string? bio,
+        string? avatarUrl,
+        string role,
+        DateTime createdAt)
+        : this(id, email, username, displayName, bio, avatarUrl, role, UserStatus.Active, false, null, createdAt)
+    {
+    }
+}
+
+public record TrashUserItemDto(
+    Guid Id,
+    string Email,
+    string Username,
+    string? DisplayName,
+    string Role,
+    UserStatus Status,
+    DateTime? DeletedAt,
     DateTime CreatedAt
 );
 
@@ -17,20 +49,40 @@ public record UpdateUserProfileRequest(
     string? AvatarUrl
 );
 
+[method: JsonConstructor]
 public record AdminCreateUserRequest(
     string Email,
     string Username,
     string? DisplayName,
     string? Bio,
     string? AvatarUrl,
-    string? Role
-);
+    string? Role,
+    UserStatus Status = UserStatus.Active
+)
+{
+    public AdminCreateUserRequest(string email, string username, string? displayName, string? bio, string? avatarUrl, string? role)
+        : this(email, username, displayName, bio, avatarUrl, role, UserStatus.Active)
+    {
+    }
+}
 
+[method: JsonConstructor]
 public record AdminUpdateUserRequest(
     string? Email,
     string? Username,
     string? DisplayName,
     string? Bio,
     string? AvatarUrl,
-    string? Role
+    string? Role,
+    UserStatus? Status = null
+)
+{
+    public AdminUpdateUserRequest(string? email, string? username, string? displayName, string? bio, string? avatarUrl, string? role)
+        : this(email, username, displayName, bio, avatarUrl, role, null)
+    {
+    }
+}
+
+public record UpdateUserStatusRequest(
+    UserStatus Status
 );

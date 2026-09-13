@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideMail,
@@ -7,24 +7,32 @@ import {
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
 import { UserRole } from '../../core/models/blog.model';
+import { ConfirmDialogService } from '../../common/confirm-modal/confirm-modal.service';
+import { TooltipDirective } from '../../common/tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-admin-users',
   imports: [
     FormsModule,
+    TooltipDirective,
     LucideTrash2,
     LucideSearch,
     LucideMail,
   ],
   templateUrl: './admin-users.component.html',
 })
-export class AdminUsersComponent {
+export class AdminUsersComponent implements OnInit {
   private readonly blogService = inject(BlogService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly users = this.blogService.users;
 
   readonly searchQuery = signal<string>('');
   readonly roleFilter = signal<'all' | UserRole>('all');
+
+  ngOnInit(): void {
+    this.blogService.loadAdminUsers();
+  }
 
   readonly filteredUsers = computed(() => {
     const role = this.roleFilter();
@@ -44,8 +52,16 @@ export class AdminUsersComponent {
     this.blogService.toggleUserStatus(userId);
   }
 
-  deleteUser(userId: string, userName: string): void {
-    if (window.confirm(`Delete user record for "${userName}"?`)) {
+  async deleteUser(userId: string, userName: string): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'DELETE_USER_RECORD',
+      message: `Delete user record for "${userName}"?`,
+      details: 'This will remove the user account and associated permissions.',
+      confirmText: 'DELETE USER',
+      cancelText: 'CANCEL',
+      tone: 'danger',
+    });
+    if (confirmed) {
       this.blogService.deleteUser(userId);
     }
   }

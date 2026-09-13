@@ -11,7 +11,6 @@ import {
   LucideHelpCircle,
   LucideImage,
   LucideLayoutDashboard,
-  LucideLock,
   LucideLogOut,
   LucideMaximize2,
   LucideMessageSquare,
@@ -21,11 +20,11 @@ import {
   LucideSearch,
   LucideSettings,
   LucideType,
-  LucideUnlock,
   LucideUsers,
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
 import { AdminTab, ThemeMode, TypographyFont } from '../../core/models/blog.model';
+import { TooltipDirective } from '../tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-topbar',
@@ -35,8 +34,6 @@ import { AdminTab, ThemeMode, TypographyFont } from '../../core/models/blog.mode
     LucideMinimize2,
     LucidePanelLeftClose,
     LucidePanelLeftOpen,
-    LucideLock,
-    LucideUnlock,
     LucideType,
     LucideHelpCircle,
     LucideLayoutDashboard,
@@ -47,6 +44,7 @@ import { AdminTab, ThemeMode, TypographyFont } from '../../core/models/blog.mode
     LucideSettings,
     LucideLogOut,
     LucideExternalLink,
+    TooltipDirective,
   ],
   templateUrl: './topbar.component.html',
 })
@@ -175,7 +173,7 @@ export class TopbarComponent {
     this.blogService.setSearchQuery('');
   }
 
-  navigateTo(route: 'landing' | 'post' | 'search' | 'admin-auth' | 'admin'): void {
+  navigateTo(route: 'landing' | 'post' | 'search' | 'admin'): void {
     this.blogService.navigateTo(route);
   }
 

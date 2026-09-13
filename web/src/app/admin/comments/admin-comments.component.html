@@ -101,6 +101,8 @@
               type="button"
               (click)="toggleSelectAll()"
               class="cursor-pointer"
+              appTooltip="Toggle Select All"
+              tooltipPosition="right"
               aria-label="Select all"
             >
               @if (isAllSelected()) {
@@ -137,6 +139,8 @@
                   type="button"
                   (click)="toggleSelect(c.id)"
                   class="cursor-pointer"
+                  [appTooltip]="'Select comment by ' + c.author_name"
+                  tooltipPosition="right"
                   [attr.aria-label]="'Select comment by ' + c.author_name"
                 >
                   @if (selected) {
@@ -200,7 +204,8 @@
                       type="button"
                       (click)="updateStatus(c.id, 'approved')"
                       class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-[var(--accent-terminal)] text-[10px] cursor-pointer"
-                      title="Approve Comment"
+                      appTooltip="Approve Comment"
+                      tooltipPosition="top"
                     >
                       Approve
                     </button>
@@ -210,7 +215,8 @@
                       type="button"
                       (click)="updateStatus(c.id, 'rejected')"
                       class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[var(--text-dim)] text-[10px] cursor-pointer"
-                      title="Reject Comment"
+                      appTooltip="Reject Comment"
+                      tooltipPosition="top"
                     >
                       Reject
                     </button>
@@ -220,7 +226,8 @@
                       type="button"
                       (click)="updateStatus(c.id, 'spam')"
                       class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-orange)] text-[var(--accent-orange)] cursor-pointer"
-                      title="Mark as Spam"
+                      appTooltip="Flag as Spam"
+                      tooltipPosition="top"
                     >
                       <svg lucideAlertOctagon class="w-3 h-3"></svg>
                     </button>
@@ -229,7 +236,8 @@
                     type="button"
                     (click)="deleteComment(c.id)"
                     class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer"
-                    title="Delete Comment"
+                    appTooltip="Delete Comment"
+                    tooltipPosition="top"
                   >
                     <svg lucideTrash2 class="w-3 h-3"></svg>
                   </button>

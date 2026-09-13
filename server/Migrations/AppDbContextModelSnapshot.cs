@@ -40,6 +40,14 @@ namespace server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsGuest")
                         .HasColumnType("boolean");
 
@@ -61,6 +69,8 @@ namespace server.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("IsDeleted");
+
                     b.HasIndex("ManagementToken");
 
                     b.HasIndex("PostId");
@@ -79,8 +89,14 @@ namespace server.Migrations
                     b.Property<Guid>("AuthorId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
                     b.Property<string>("Content")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CoverImageUrl")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -93,6 +109,9 @@ namespace server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("timestamp with time zone");
@@ -110,6 +129,10 @@ namespace server.Migrations
                     b.Property<string>("Summary")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -182,6 +205,9 @@ namespace server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("DisplayName")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
@@ -191,12 +217,22 @@ namespace server.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
                         .HasDefaultValue("Guest");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -210,6 +246,10 @@ namespace server.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("Username")
                         .IsUnique();

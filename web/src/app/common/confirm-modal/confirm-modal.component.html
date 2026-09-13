@@ -1,0 +1,108 @@
+@if (dialogService.isOpen()) {
+  <div
+    id="bios-confirm-overlay"
+    (click)="onCancel()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-[1px] font-mono-bios"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="confirm-modal-title"
+    aria-describedby="confirm-modal-description"
+  >
+    <div
+      id="bios-confirm-dialog"
+      (click)="$event.stopPropagation()"
+      class="w-full max-w-md bg-[var(--bg-surface)] border text-[var(--text-primary)] shadow-2xl flex flex-col animate-fadeIn"
+      [class.border-red-500]="dialogService.tone() === 'danger'"
+      [class.border-amber-500]="dialogService.tone() === 'warning'"
+      [class.border-[var(--accent-terminal)]]="dialogService.tone() === 'info'"
+    >
+      <!-- Modal Title Bar -->
+      <div
+        class="flex items-center justify-between px-3.5 py-2.5 bg-[var(--bg-canvas)] border-b text-xs select-none"
+        [class.border-red-500/40]="dialogService.tone() === 'danger'"
+        [class.border-amber-500/40]="dialogService.tone() === 'warning'"
+        [class.border-[var(--border-color)]]="dialogService.tone() === 'info'"
+      >
+        <div class="flex items-center gap-2">
+          @if (dialogService.tone() === 'danger') {
+            <svg lucideAlertOctagon class="w-4 h-4 text-red-400 shrink-0" aria-hidden="true"></svg>
+          } @else if (dialogService.tone() === 'warning') {
+            <svg lucideAlertTriangle class="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true"></svg>
+          } @else {
+            <svg lucideInfo class="w-4 h-4 text-[var(--accent-terminal)] shrink-0" aria-hidden="true"></svg>
+          }
+          <h3
+            id="confirm-modal-title"
+            class="font-bold tracking-wider uppercase text-[11px]"
+            [class.text-red-400]="dialogService.tone() === 'danger'"
+            [class.text-amber-400]="dialogService.tone() === 'warning'"
+            [class.text-[var(--accent-terminal)]]="dialogService.tone() === 'info'"
+          >
+            [{{ dialogService.title() }}]
+          </h3>
+        </div>
+        <button
+          type="button"
+          (click)="onCancel()"
+          class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-dim)] hover:text-[var(--text-primary)] cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-terminal)]"
+          aria-label="Close dialog"
+        >
+          <svg lucideX class="w-4 h-4" aria-hidden="true"></svg>
+        </button>
+      </div>
+
+      <!-- Content / Message -->
+      <div class="p-5 space-y-3 text-xs leading-relaxed">
+        <p id="confirm-modal-description" class="text-[var(--text-primary)] text-sm">
+          {{ dialogService.message() }}
+        </p>
+
+        @if (dialogService.details()) {
+          <div class="p-2.5 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-dim)] text-[11px]">
+            {{ dialogService.details() }}
+          </div>
+        }
+      </div>
+
+      <!-- Action Buttons Bar -->
+      <div
+        class="px-4 py-3 bg-[var(--bg-canvas)] border-t border-[var(--border-color)] flex items-center justify-end gap-2.5 text-xs"
+      >
+        <!-- Cancel Button (Hidden for simple alerts) -->
+        @if (!dialogService.isAlert()) {
+          <button
+            #cancelButton
+            type="button"
+            (click)="onCancel()"
+            class="px-4 py-2 border border-[var(--border-color)] bg-[var(--bg-surface)] hover:bg-[var(--bg-highlight)] text-[var(--text-primary)] font-bold uppercase tracking-wider cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-terminal)]"
+          >
+            {{ dialogService.cancelText() }}
+          </button>
+        }
+
+        <!-- Primary Action Button -->
+        <button
+          #confirmButton
+          type="button"
+          (click)="onConfirm()"
+          class="px-4 py-2 font-bold uppercase tracking-wider cursor-pointer transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 flex items-center gap-1.5"
+          [class.bg-red-600]="dialogService.tone() === 'danger'"
+          [class.text-white]="dialogService.tone() === 'danger'"
+          [class.hover:bg-red-700]="dialogService.tone() === 'danger'"
+          [class.focus-visible:ring-red-500]="dialogService.tone() === 'danger'"
+          [class.bg-amber-600]="dialogService.tone() === 'warning'"
+          [class.text-white]="dialogService.tone() === 'warning'"
+          [class.hover:bg-amber-700]="dialogService.tone() === 'warning'"
+          [class.focus-visible:ring-amber-500]="dialogService.tone() === 'warning'"
+          [class.bg-[var(--accent-terminal)]]="dialogService.tone() === 'info'"
+          [class.text-[var(--accent-terminal-contrast)]]="dialogService.tone() === 'info'"
+          [class.hover:opacity-90]="dialogService.tone() === 'info'"
+          [class.focus-visible:ring-[var(--accent-terminal)]]="dialogService.tone() === 'info'"
+        >
+          <svg lucideCheck class="w-3.5 h-3.5" aria-hidden="true"></svg>
+          <span>{{ dialogService.confirmText() }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -38,7 +38,6 @@ import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdo
     LucideMessageSquare,
     LucideCheck,
     LucideTag,
-    LucideShieldCheck,
     LucideAlertCircle,
   ],
   templateUrl: './post-detail-view.component.html',

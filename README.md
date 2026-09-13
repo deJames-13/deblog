@@ -184,6 +184,24 @@ deblog/
 
 ---
 
+## To Do's
+
+Polishing Phase
+
+- [ ] Dashboard Homepage still has some random mock data analytics. Here are the observed data that needs to be implemented and be realistic.
+	- [ ] 7 day access telemetry has a bar chart with unknow mock data
+  - [ ] Storage telemetry - has no database relatedness and still mock data. must be implemented in both backend and web
+  - [ ] Stats card kinda work but the Likes card has Engagement score: 4.8 / 5
+ even tho there is no data yet.
+- [ ] Dashboard Media Page (has yet to be implemented in both web and server)
+  - [ ] Implement cloudinary endpoints and multipart form data in for posts in server
+  - [ ] Update web admin media library page to align and reflect the server
+- [ ] Dashboard admin settings page
+  - [ ] ensure the data of the author properly aligns the database all data such as avatar, banner, name, title, tagline, biography, email, location, and socials is in database 
+
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

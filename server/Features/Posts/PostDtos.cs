@@ -16,6 +16,7 @@ public record PostAnalyticsDto(
     int CommentsCount
 );
 
+[method: JsonConstructor]
 public record PostListItemDto(
     Guid Id,
     string Title,
@@ -29,9 +30,23 @@ public record PostListItemDto(
     DateTime? PublishedAt,
     DateTime CreatedAt,
     AuthorSummaryDto Author,
-    PostAnalyticsDto Analytics
-);
+    PostAnalyticsDto Analytics,
+    string? CoverImageUrl = null,
+    string? Category = null,
+    string[]? Tags = null,
+    bool IsFeatured = false
+)
+{
+    public PostListItemDto(
+        Guid id, string title, string slug, string? summary, string url,
+        PostStatus status, bool isPublished, bool isDeleted, DateTime? deletedAt,
+        DateTime? publishedAt, DateTime createdAt, AuthorSummaryDto author, PostAnalyticsDto analytics)
+        : this(id, title, slug, summary, url, status, isPublished, isDeleted, deletedAt, publishedAt, createdAt, author, analytics, null, null, null, false)
+    {
+    }
+}
 
+[method: JsonConstructor]
 public record PostDetailDto(
     Guid Id,
     string Title,
@@ -47,8 +62,22 @@ public record PostDetailDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     AuthorSummaryDto Author,
-    PostAnalyticsDto Analytics
-);
+    PostAnalyticsDto Analytics,
+    string? CoverImageUrl = null,
+    string? Category = null,
+    string[]? Tags = null,
+    bool IsFeatured = false
+)
+{
+    public PostDetailDto(
+        Guid id, string title, string slug, string? summary, string content, string url,
+        PostStatus status, bool isPublished, bool isDeleted, DateTime? deletedAt,
+        DateTime? publishedAt, DateTime createdAt, DateTime updatedAt,
+        AuthorSummaryDto author, PostAnalyticsDto analytics)
+        : this(id, title, slug, summary, content, url, status, isPublished, isDeleted, deletedAt, publishedAt, createdAt, updatedAt, author, analytics, null, null, null, false)
+    {
+    }
+}
 
 public record TrashPostItemDto(
     Guid Id,
@@ -68,11 +97,15 @@ public record CreatePostRequest(
     string? Summary = null,
     string Content = "",
     PostStatus Status = PostStatus.Draft,
-    bool? IsPublished = null
+    bool? IsPublished = null,
+    string? CoverImageUrl = null,
+    string? Category = null,
+    string[]? Tags = null,
+    bool IsFeatured = false
 )
 {
     public CreatePostRequest(string title, string? slug, string? summary, string content, bool isPublished)
-        : this(title, slug, summary, content, isPublished ? PostStatus.Published : PostStatus.Draft, isPublished)
+        : this(title, slug, summary, content, isPublished ? PostStatus.Published : PostStatus.Draft, isPublished, null, null, null, false)
     {
     }
 }
@@ -84,11 +117,15 @@ public record UpdatePostRequest(
     string? Summary = null,
     string? Content = null,
     PostStatus? Status = null,
-    bool? IsPublished = null
+    bool? IsPublished = null,
+    string? CoverImageUrl = null,
+    string? Category = null,
+    string[]? Tags = null,
+    bool? IsFeatured = null
 )
 {
     public UpdatePostRequest(string? title, string? slug, string? summary, string? content, bool isPublished)
-        : this(title, slug, summary, content, isPublished ? PostStatus.Published : PostStatus.Draft, isPublished)
+        : this(title, slug, summary, content, isPublished ? PostStatus.Published : PostStatus.Draft, isPublished, null, null, null, null)
     {
     }
 }

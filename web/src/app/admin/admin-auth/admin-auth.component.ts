@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import {
   LucideArrowLeft,
   LucideKey,
+  LucideLoader,
   LucideLock,
   LucideTerminal,
   LucideUser,
@@ -18,6 +19,7 @@ import { BlogService } from '../../core/services/blog.service';
     LucideTerminal,
     LucideUser,
     LucideKey,
+    LucideLoader,
   ],
   templateUrl: './admin-auth.component.html',
 })
@@ -27,13 +29,27 @@ export class AdminAuthComponent {
   readonly username = signal<string>('');
   readonly password = signal<string>('');
   readonly errorMsg = signal<string>('');
+  readonly isSubmitting = signal<boolean>(false);
 
-  handleLogin(e: Event): void {
+  async handleLogin(e: Event): Promise<void> {
     e.preventDefault();
+    if (this.isSubmitting()) return;
+
     this.errorMsg.set('');
-    const ok = this.blogService.loginAdmin(this.username(), this.password());
-    if (!ok) {
-      this.errorMsg.set('AUTHENTICATION_FAILED: Invalid username or security key.');
+    this.isSubmitting.set(true);
+
+    try {
+      const ok = await this.blogService.loginAdmin(this.username(), this.password());
+      if (!ok) {
+        this.errorMsg.set(
+          this.blogService.authService.authError() ||
+            'AUTHENTICATION_FAILED: Invalid credentials or unauthorized role.'
+        );
+      }
+    } catch {
+      this.errorMsg.set('CONNECTION_ERROR: Unable to contact authentication server.');
+    } finally {
+      this.isSubmitting.set(false);
     }
   }
 

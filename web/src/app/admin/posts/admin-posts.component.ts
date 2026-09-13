@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideBold,
@@ -21,6 +21,8 @@ import {
 import { BlogService } from '../../core/services/blog.service';
 import { BlogPost, PostStatus } from '../../core/models/blog.model';
 import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdown-renderer.component';
+import { ConfirmDialogService } from '../../common/confirm-modal/confirm-modal.service';
+import { TooltipDirective } from '../../common/tooltip/tooltip.directive';
 
 @Component({
   selector: 'app-admin-posts',
@@ -43,17 +45,23 @@ import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdo
     LucideHeading3,
     LucideImage,
     LucideExternalLink,
+    TooltipDirective,
   ],
   templateUrl: './admin-posts.component.html',
 })
-export class AdminPostsComponent {
+export class AdminPostsComponent implements OnInit {
   private readonly blogService = inject(BlogService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly posts = this.blogService.posts;
   readonly media = this.blogService.media;
 
   readonly activeFilter = signal<'all' | PostStatus>('all');
   readonly searchQuery = signal<string>('');
+
+  ngOnInit(): void {
+    this.blogService.loadAdminPosts();
+  }
 
   // Editor states
   readonly editingPost = signal<Partial<BlogPost> | null>(null);
@@ -174,8 +182,16 @@ export class AdminPostsComponent {
     this.blogService.updatePostStatus(id, status);
   }
 
-  deletePost(id: string, title: string): void {
-    if (window.confirm(`Are you sure you want to permanently delete post "${title}"?`)) {
+  async deletePost(id: string, title: string): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'PURGE_POST_RECORD',
+      message: `Are you sure you want to permanently delete post "${title}"?`,
+      details: 'This action will move the post to trash and remove it from public indexing.',
+      confirmText: 'DELETE POST',
+      cancelText: 'CANCEL',
+      tone: 'danger',
+    });
+    if (confirmed) {
       this.blogService.deletePost(id);
     }
   }

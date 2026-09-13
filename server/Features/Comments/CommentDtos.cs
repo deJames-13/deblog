@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace deblog.Server.Features.Comments;
 
 public record CommentAuthorDto(
@@ -7,15 +9,31 @@ public record CommentAuthorDto(
     string? AvatarUrl
 );
 
+[method: JsonConstructor]
 public record CommentResponseDto(
     Guid Id,
     Guid PostId,
     string Content,
     CommentStatus Status,
+    bool IsDeleted,
+    DateTime? DeletedAt,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     CommentAuthorDto Author
-);
+)
+{
+    public CommentResponseDto(
+        Guid id,
+        Guid postId,
+        string content,
+        CommentStatus status,
+        DateTime createdAt,
+        DateTime updatedAt,
+        CommentAuthorDto author)
+        : this(id, postId, content, status, false, null, createdAt, updatedAt, author)
+    {
+    }
+}
 
 public record CommentCreatedResponseDto(
     Guid Id,
@@ -27,6 +45,7 @@ public record CommentCreatedResponseDto(
     CommentAuthorDto Author
 );
 
+[method: JsonConstructor]
 public record AdminCommentResponseDto(
     Guid Id,
     Guid PostId,
@@ -34,8 +53,37 @@ public record AdminCommentResponseDto(
     string Content,
     CommentStatus Status,
     bool IsGuest,
+    bool IsDeleted,
+    DateTime? DeletedAt,
     DateTime CreatedAt,
     DateTime UpdatedAt,
+    CommentAuthorDto Author
+)
+{
+    public AdminCommentResponseDto(
+        Guid id,
+        Guid postId,
+        string postTitle,
+        string content,
+        CommentStatus status,
+        bool isGuest,
+        DateTime createdAt,
+        DateTime updatedAt,
+        CommentAuthorDto author)
+        : this(id, postId, postTitle, content, status, isGuest, false, null, createdAt, updatedAt, author)
+    {
+    }
+}
+
+public record TrashCommentItemDto(
+    Guid Id,
+    Guid PostId,
+    string PostTitle,
+    string Content,
+    CommentStatus Status,
+    bool IsGuest,
+    DateTime? DeletedAt,
+    DateTime CreatedAt,
     CommentAuthorDto Author
 );
 
