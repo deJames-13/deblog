@@ -16,6 +16,7 @@ import {
   LucideShare2,
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { AuthorAvatarComponent } from '../../common/author-avatar/author-avatar.component';
 import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdown-renderer.component';
 
@@ -37,8 +38,10 @@ import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdo
 })
 export class ZenReaderComponent {
   private readonly blogService = inject(BlogService);
+  private readonly presenceService = inject(PresenceService);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly isAuthorOnline = this.presenceService.isAuthorOnline;
   readonly activePost = this.blogService.activePost;
   readonly profile = this.blogService.profile;
   readonly font = this.blogService.font;

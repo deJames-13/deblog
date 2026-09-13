@@ -53,10 +53,12 @@
       }
     </div>
 
-    <!-- Excerpt -->
-    <p class="card-excerpt">
-      {{ post().excerpt }}
-    </p>
+    <!-- Shortened Markdown Content Preview -->
+    @if (previewMarkdown()) {
+      <div class="card-markdown-preview pointer-events-none">
+        <app-markdown-renderer [content]="previewMarkdown()" />
+      </div>
+    }
 
     <!-- Tags -->
     @if (post().tags.length > 0) {

@@ -271,4 +271,11 @@ export class SupabaseAuthService {
       this.syncCurrentUserProfile();
     }
   }
+
+  /**
+   * Exposes the underlying initialized SupabaseClient instance
+   */
+  getSupabaseClient(): SupabaseClient | null {
+    return this.supabase;
+  }
 }

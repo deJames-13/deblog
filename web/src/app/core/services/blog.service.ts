@@ -106,7 +106,7 @@ function getSavedProfile(): SiteProfile {
   return p;
 }
 
-function mapPostDtoToBlogPost(dto: PostListItemDto | PostDetailDto): BlogPost {
+function mapPostDtoToBlogPost(dto: PostListItemDto | PostDetailDto, existingPost?: BlogPost): BlogPost {
   let statusStr: PostStatus = 'draft';
   if (typeof dto.status === 'string') {
     statusStr = dto.status.toLowerCase() as PostStatus;
@@ -118,16 +118,17 @@ function mapPostDtoToBlogPost(dto: PostListItemDto | PostDetailDto): BlogPost {
     statusStr = 'archived';
   }
 
-  const content = 'content' in dto ? dto.content : '';
-  const wordCount = (content || dto.summary || '').split(/\s+/).filter(Boolean).length;
+  const content = 'content' in dto && dto.content ? dto.content : (existingPost?.content || '');
+  const summary = (dto.summary || '').trim();
+  const wordCount = (content || summary).split(/\s+/).filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   return {
     id: dto.id,
     slug: dto.slug,
     title: dto.title,
-    subtitle: dto.summary || '',
-    excerpt: dto.summary || (content ? content.slice(0, 160) + '...' : 'No summary provided.'),
+    subtitle: summary,
+    excerpt: summary || (content ? content.replace(/[#*`_~>[\]]/g, '').slice(0, 160).trim() + '...' : 'No summary provided.'),
     content: content,
     cover_image: dto.coverImageUrl || undefined,
     category: dto.category || 'Engineering',
@@ -137,7 +138,7 @@ function mapPostDtoToBlogPost(dto: PostListItemDto | PostDetailDto): BlogPost {
     views_count: dto.analytics?.views ?? 0,
     reading_time_minutes: readingTime,
     created_at: dto.createdAt,
-    updated_at: 'updatedAt' in dto ? dto.updatedAt : dto.createdAt,
+    updated_at: 'updatedAt' in dto ? dto.updatedAt : (existingPost?.updated_at || dto.createdAt),
     published_at: dto.publishedAt || undefined,
     is_featured: dto.isFeatured ?? false,
   };
@@ -302,6 +303,7 @@ export class BlogService {
 
   // Loading & Offline Fallback States (5 Mandatory States Support)
   readonly isLoading = signal<boolean>(false);
+  readonly isDetailLoading = signal<boolean>(false);
   readonly isSyncing = signal<boolean>(false);
   readonly isOfflineFallback = signal<boolean>(false);
   readonly apiError = signal<string | null>(null);
@@ -510,7 +512,8 @@ export class BlogService {
       );
 
       if (result && result.items) {
-        const mapped = result.items.map(mapPostDtoToBlogPost);
+        const existingMap = new Map(this.posts().map((p) => [p.id, p]));
+        const mapped = result.items.map((dto) => mapPostDtoToBlogPost(dto, existingMap.get(dto.id)));
         if (havePostsChanged(this.posts(), mapped)) {
           this.posts.set(mapped);
           hasChanges = true;
@@ -566,7 +569,8 @@ export class BlogService {
         this.postsApi.getPosts({ page: 1, pageSize: 50, publishedOnly: false })
       );
       if (result && result.items) {
-        const mapped = result.items.map(mapPostDtoToBlogPost);
+        const existingMap = new Map(this.posts().map((p) => [p.id, p]));
+        const mapped = result.items.map((dto) => mapPostDtoToBlogPost(dto, existingMap.get(dto.id)));
         if (havePostsChanged(this.posts(), mapped)) {
           this.posts.set(mapped);
         }
@@ -656,6 +660,11 @@ export class BlogService {
    * Fetches full post detail by ID or slug from the live backend
    */
   async fetchPostDetail(idOrSlug: string): Promise<BlogPost | null> {
+    const existing = this.posts().find((p) => p.id === idOrSlug || p.slug === idOrSlug);
+    const needsLoading = !existing || !existing.content;
+    if (needsLoading) {
+      this.isDetailLoading.set(true);
+    }
     try {
       const detailDto = await firstValueFrom(this.postsApi.getPostByIdOrSlug(idOrSlug));
       if (detailDto) {
@@ -676,6 +685,10 @@ export class BlogService {
       }
     } catch (err) {
       console.warn(`[BlogService] Could not fetch detail for ${idOrSlug} from backend:`, err);
+    } finally {
+      if (needsLoading) {
+        this.isDetailLoading.set(false);
+      }
     }
     return this.posts().find((p) => p.id === idOrSlug || p.slug === idOrSlug) || null;
   }
@@ -737,6 +750,11 @@ export class BlogService {
           next: () => {},
           error: () => {},
         });
+      }
+
+      // Fetch complete markdown content if not yet loaded in cache
+      if (!targetPost?.content) {
+        this.fetchPostDetail(targetPost?.slug || postId);
       }
 
       this.currentRoute.set('post');
@@ -988,19 +1006,23 @@ export class BlogService {
 
   // Post CRUD Methods
   createPost(data: Partial<BlogPost>): BlogPost {
-    const slug = (data.title || 'untitled-post')
+    const slug = (data.slug || data.title || 'untitled-post')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
+
+    const rawSummary = (data.subtitle ?? data.excerpt ?? '').trim();
+    const cleanContentPreview = data.content
+      ? data.content.replace(/[#*`_~>[\]]/g, '').slice(0, 160).trim() + '...'
+      : 'No summary provided.';
+    const finalSummary = rawSummary || cleanContentPreview;
 
     const newPost: BlogPost = {
       id: `post-${Date.now()}`,
       slug,
       title: data.title || 'Untitled Post',
-      subtitle: data.subtitle || '',
-      excerpt:
-        data.excerpt ||
-        (data.content ? data.content.slice(0, 160) + '...' : 'No excerpt provided.'),
+      subtitle: rawSummary,
+      excerpt: finalSummary,
       content: data.content || '',
       cover_image:
         data.cover_image ||
@@ -1027,7 +1049,7 @@ export class BlogService {
       .createPost({
         title: newPost.title,
         slug: newPost.slug,
-        summary: newPost.excerpt,
+        summary: rawSummary || undefined,
         content: newPost.content,
         status: newPost.status === 'published' ? 'Published' : 'Draft',
         coverImageUrl: newPost.cover_image,
@@ -1051,12 +1073,20 @@ export class BlogService {
   }
 
   updatePost(postId: string, data: Partial<BlogPost>): void {
+    const rawSummary = (data.subtitle !== undefined ? data.subtitle : data.excerpt)?.trim();
+
     this.posts.update((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
+          const summaryValue = rawSummary !== undefined ? rawSummary : p.subtitle;
+          const cleanPreview = data.content
+            ? data.content.replace(/[#*`_~>[\]]/g, '').slice(0, 160).trim() + '...'
+            : p.excerpt;
           const updated = {
             ...p,
             ...data,
+            subtitle: summaryValue,
+            excerpt: summaryValue || cleanPreview,
             updated_at: new Date().toISOString(),
             reading_time_minutes: data.content
               ? Math.max(1, Math.ceil(data.content.split(/\s+/).length / 200))
@@ -1077,7 +1107,7 @@ export class BlogService {
         .updatePost(postId, {
           title: data.title,
           slug: data.slug,
-          summary: data.excerpt,
+          summary: rawSummary,
           content: data.content,
           status: data.status === 'published' ? 'Published' : data.status === 'draft' ? 'Draft' : undefined,
           coverImageUrl: data.cover_image,

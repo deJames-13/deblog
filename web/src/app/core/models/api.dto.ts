@@ -21,6 +21,7 @@ export interface PostListItemDto {
   title: string;
   slug: string;
   summary?: string | null;
+  content?: string;
   url: string;
   status: number | 'Draft' | 'Published' | 'Hidden' | 'Archived';
   isPublished: boolean;

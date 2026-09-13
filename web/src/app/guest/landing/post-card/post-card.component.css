@@ -198,8 +198,9 @@
   color: var(--text-muted);
 }
 
-/* Excerpt */
-.card-excerpt {
+/* Excerpt & Shortened Markdown Preview */
+.card-excerpt,
+.card-markdown-preview {
   font-size: 0.8125rem;
   line-height: 1.6;
   color: var(--text-muted);
@@ -210,9 +211,36 @@
 }
 
 @media (min-width: 640px) {
-  .card-excerpt {
+  .card-excerpt,
+  .card-markdown-preview {
     font-size: 0.875rem;
   }
+}
+
+.card-markdown-preview ::ng-deep p {
+  margin: 0;
+  display: inline;
+}
+
+.card-markdown-preview ::ng-deep code {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.25rem;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  color: var(--accent-terminal);
+}
+
+.card-markdown-preview ::ng-deep h1,
+.card-markdown-preview ::ng-deep h2,
+.card-markdown-preview ::ng-deep h3,
+.card-markdown-preview ::ng-deep h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+  display: inline;
+  border: none;
+  padding: 0;
+  color: var(--text-primary);
 }
 
 /* Tags */

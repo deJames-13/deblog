@@ -20,6 +20,7 @@ import {
   LucideTag,
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
+import { PresenceService } from '../../core/services/presence.service';
 import { AuthorAvatarComponent } from '../../common/author-avatar/author-avatar.component';
 import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdown-renderer.component';
 
@@ -44,9 +45,12 @@ import { MarkdownRendererComponent } from '../../common/markdown-renderer/markdo
 })
 export class PostDetailViewComponent {
   private readonly blogService = inject(BlogService);
+  private readonly presenceService = inject(PresenceService);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly isAuthorOnline = this.presenceService.isAuthorOnline;
   readonly activePost = this.blogService.activePost;
+  readonly isDetailLoading = this.blogService.isDetailLoading;
   readonly comments = this.blogService.comments;
   readonly profile = this.blogService.profile;
   readonly font = this.blogService.font;
