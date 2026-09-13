@@ -193,7 +193,7 @@
         <div class="flex items-center gap-2">
           <svg lucideMessageSquare class="w-4 h-4 text-[var(--accent-terminal)]"></svg>
           <h3 class="font-bold uppercase tracking-wider text-xs sm:text-sm text-[var(--text-primary)]">
-            TECHNICAL COMMENTARY ({{ approvedComments().length }})
+            COMMENTS ({{ approvedComments().length }})
           </h3>
         </div>
 
@@ -221,7 +221,7 @@
           <div class="text-[var(--text-dim)]">
             <svg lucideMessageSquare class="w-6 h-6 mx-auto opacity-50 mb-2"></svg>
             <div class="font-bold text-xs uppercase tracking-wider text-[var(--text-muted)]">
-              NO TECHNICAL COMMENTARY LOGGED YET
+              NO COMMENT YET
             </div>
             <p class="text-[11px] text-[var(--text-dim)] mt-1">
               Be the first engineer to contribute to this discussion.
@@ -243,10 +243,6 @@
                 <div class="flex items-center gap-2">
                   <app-author-avatar [name]="c.author_name" size="xs" />
                   <span class="font-bold text-[var(--text-primary)]">{{ c.author_name }}</span>
-                  <span class="flex items-center gap-0.5 text-[9px] px-1 py-0.2 bg-[var(--accent-terminal)]/10 text-[var(--accent-terminal)] border border-[var(--accent-terminal)] font-semibold">
-                    <svg lucideShieldCheck class="w-2.5 h-2.5"></svg>
-                    <span>VERIFIED</span>
-                  </span>
                 </div>
                 <time [attr.datetime]="c.created_at" class="text-[10px] text-[var(--text-dim)]">
                   {{ formatCommentDate(c.created_at) }}

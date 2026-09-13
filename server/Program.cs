@@ -12,9 +12,14 @@ Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-// 2. Exception Handling & Problem Details
+// 2. Exception Handling, Problem Details & JSON Options
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(allowIntegerValues: true));
+});
 
 // 3. Database (EF Core + Npgsql)
 builder.Services.AddDatabase(builder.Configuration);
@@ -25,6 +30,8 @@ builder.Services.AddSupabaseAuthentication(builder.Configuration);
 // 5. In-Memory Cache & Analytics Tracker
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAnalyticsTracker, MemoryAnalyticsTracker>();
+builder.Services.AddScoped<IDataReconciliationService, DataReconciliationService>();
+builder.Services.AddHostedService<DataSyncBackgroundService>();
 
 // 6. Swagger / OpenAPI with JWT Bearer support
 builder.Services.AddConfiguredSwagger();
@@ -52,6 +59,7 @@ await app.SeedMainAuthorAsync();
 
 // 9. Request Pipeline Configuration
 app.UseExceptionHandler();
+app.UseRequestLogging();
 
 if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("ENABLE_SWAGGER", true))
 {

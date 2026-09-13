@@ -27,13 +27,21 @@ public static class PostHelpers
             p.DeletedAt,
             p.PublishedAt,
             p.CreatedAt,
-            new AuthorSummaryDto(p.Author.Id, p.Author.Username, p.Author.DisplayName, p.Author.AvatarUrl),
+            new AuthorSummaryDto(
+                p.Author?.Id ?? Guid.Empty,
+                p.Author?.Username ?? "author",
+                p.Author?.DisplayName ?? "Author",
+                p.Author?.AvatarUrl),
             new PostAnalyticsDto(
                 p.Analytics != null ? p.Analytics.Views : 0,
                 p.Analytics != null ? p.Analytics.Likes : 0,
                 p.Analytics != null ? p.Analytics.Shares : 0,
-                p.Comments.Count(c => c.Status == CommentStatus.Approved)
-            )
+                p.Comments != null ? p.Comments.Count(c => c.Status == CommentStatus.Approved) : 0
+            ),
+            p.CoverImageUrl,
+            p.Category,
+            p.Tags,
+            p.IsFeatured
         );
     }
 
@@ -53,13 +61,21 @@ public static class PostHelpers
             post.PublishedAt,
             post.CreatedAt,
             post.UpdatedAt,
-            new AuthorSummaryDto(post.Author.Id, post.Author.Username, post.Author.DisplayName, post.Author.AvatarUrl),
+            new AuthorSummaryDto(
+                post.Author?.Id ?? Guid.Empty,
+                post.Author?.Username ?? "author",
+                post.Author?.DisplayName ?? "Author",
+                post.Author?.AvatarUrl),
             new PostAnalyticsDto(
                 post.Analytics?.Views ?? 0,
                 post.Analytics?.Likes ?? 0,
                 post.Analytics?.Shares ?? 0,
-                post.Comments.Count(c => c.Status == CommentStatus.Approved)
-            )
+                post.Comments != null ? post.Comments.Count(c => c.Status == CommentStatus.Approved) : 0
+            ),
+            post.CoverImageUrl,
+            post.Category,
+            post.Tags,
+            post.IsFeatured
         );
     }
 }

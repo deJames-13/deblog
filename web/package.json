@@ -3,10 +3,17 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/set-env.mjs",
     "start": "ng serve",
+    "prebuild": "node scripts/set-env.mjs",
     "build": "ng build",
+    "prewatch": "node scripts/set-env.mjs",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "pretest": "node scripts/set-env.mjs",
+    "test": "ng test",
+    "test:fetch": "node scripts/verify-server-fetch.mjs",
+    "env": "node scripts/set-env.mjs",
+    "postinstall": "node scripts/set-env.mjs"
   },
   "private": true,
   "packageManager": "pnpm@11.26.0",
@@ -18,6 +25,7 @@
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@lucide/angular": "^1.44.0",
+    "@supabase/supabase-js": "^2.116.0",
     "marked": "^18.0.12",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
@@ -28,6 +36,7 @@
     "@angular/compiler-cli": "^22.1.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/marked": "^6.0.0",
+    "dotenv": "^17.4.2",
     "jsdom": "^28.0.0",
     "postcss": "^8.5.3",
     "prettier": "^3.8.1",

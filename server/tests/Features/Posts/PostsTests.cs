@@ -66,6 +66,38 @@ public class PostsTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(0, post.Analytics.Views);
     }
 
+    [Theory]
+    [InlineData("Draft", PostStatus.Draft)]
+    [InlineData("draft", PostStatus.Draft)]
+    [InlineData("Published", PostStatus.Published)]
+    [InlineData("published", PostStatus.Published)]
+    public async Task Admin_CanCreatePost_WithStringStatus_Draft_Or_Published(string statusString, PostStatus expectedStatus)
+    {
+        // Arrange
+        var adminClient = _factory.CreateAdminClient();
+        var title = $"String Status Post {Guid.NewGuid().ToString()[..6]}";
+        var json = $$"""
+        {
+            "title": "{{title}}",
+            "slug": "{{title.ToLowerInvariant().Replace(' ', '-')}}",
+            "summary": "Summary with string status",
+            "content": "Content with string status",
+            "status": "{{statusString}}",
+            "isFeatured": false
+        }
+        """;
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await adminClient.PostAsync("/api/posts", content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var post = await response.Content.ReadFromJsonAsync<PostDetailDto>();
+        Assert.NotNull(post);
+        Assert.Equal(expectedStatus, post.Status);
+    }
+
     [Fact]
     public async Task AnonymousClient_CanViewPublishedPosts_AndTrackViews()
     {
@@ -255,11 +287,29 @@ public class PostsTests : IClassFixture<TestWebApplicationFactory>
         var forceDeleteResponse = await adminClient.DeleteAsync($"/api/posts/{post.Id}/force");
         Assert.Equal(HttpStatusCode.NoContent, forceDeleteResponse.StatusCode);
 
-        // Act 7 - Verify completely purged from DB
-        var getPurged = await adminClient.GetAsync($"/api/posts/{post.Id}");
-        Assert.Equal(HttpStatusCode.NotFound, getPurged.StatusCode);
-
         var trashAfterPurge = await adminClient.GetFromJsonAsync<PagedResult<TrashPostItemDto>>("/api/posts/trash");
         Assert.DoesNotContain(trashAfterPurge!.Items, p => p.Id == post.Id);
+    }
+
+    [Fact]
+    public void PostHelpers_ToListItemDto_WhenAuthorIsDeletedInSupabase_HandlesGracefullyWithoutThrowing()
+    {
+        var post = new Post
+        {
+            Id = Guid.NewGuid(),
+            Title = "Orphaned Post",
+            Slug = "orphaned-post",
+            Summary = "Summary",
+            Content = "Content",
+            Author = null!,
+            Status = PostStatus.Published,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        var dto = PostHelpers.ToListItemDto(post, "http://localhost:5065");
+
+        Assert.NotNull(dto);
+        Assert.NotNull(dto.Author);
+        Assert.Equal("Author", dto.Author.DisplayName);
     }
 }

@@ -9,14 +9,15 @@
   <!-- Global Modals -->
   <app-help-modal />
   <app-comment-modal />
+  <app-confirm-modal />
 
   <!-- Content Container: max-w-6xl for guest reading, full-width max-w-full for admin workspace -->
   <div
     class="w-full flex-1 flex flex-col justify-between space-y-4 transition-all duration-150"
-    [class]="currentRoute() === 'admin' ? 'max-w-full px-2 sm:px-4 lg:px-6 py-2 sm:py-3' : 'max-w-6xl px-2 sm:px-4 py-3 sm:py-4'"
+    [class]="currentRoute() === 'admin' && isAdmin() ? 'max-w-full px-2 sm:px-4 lg:px-6 py-2 sm:py-3' : 'max-w-6xl px-2 sm:px-4 py-3 sm:py-4'"
   >
-    <!-- Top Header & Search Navigation (Hidden in Zen Mode and Login Screen) -->
-    @if (!zenMode() && currentRoute() !== 'admin-auth') {
+    <!-- Top Header & Search Navigation (Hidden in Zen Mode and unauthenticated Admin screen) -->
+    @if (!zenMode() && (currentRoute() !== 'admin' || isAdmin())) {
       <app-topbar />
     }
 
@@ -58,18 +59,17 @@
             <app-landing-view />
           </div>
         </div>
-      } @else if (currentRoute() === 'admin-auth') {
-        <!-- 2. ADMIN AUTHENTICATION -->
-        <app-admin-auth />
       } @else if (currentRoute() === 'admin') {
-        <!-- 3. ADMIN DASHBOARD SUITE -->
+        <!-- 2. ADMIN DASHBOARD SUITE OR AUTHENTICATION GATE -->
         @if (isAdmin()) {
           <app-admin-layout />
+        } @else if (isCheckingAuth()) {
+          <app-admin-skeleton />
         } @else {
           <app-admin-auth />
         }
       } @else {
-        <!-- 4. STANDARD GUEST VIEWS (LANDING & POST VIEW) -->
+        <!-- 3. STANDARD GUEST VIEWS (LANDING & POST VIEW) -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
           <!-- Sidebar (Tablet/Desktop 4-cols, Toggleable) -->
           <div
@@ -92,8 +92,8 @@
       }
     </main>
 
-    <!-- Unified Bottom Footer (Hidden in Zen, Admin, or Login screen) -->
-    @if (!zenMode() && currentRoute() !== 'admin' && currentRoute() !== 'admin-auth') {
+    <!-- Unified Bottom Footer (Hidden in Zen or Admin mode) -->
+    @if (!zenMode() && currentRoute() !== 'admin') {
       <app-footer />
     }
 

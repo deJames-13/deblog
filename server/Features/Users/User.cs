@@ -20,6 +20,10 @@ public class User : BaseEntity
     public string? AvatarUrl { get; set; }
     public string Role { get; set; } = UserRoles.Guest;
 
+    public UserStatus Status { get; set; } = UserStatus.Active;
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

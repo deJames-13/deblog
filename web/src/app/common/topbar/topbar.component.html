@@ -39,7 +39,8 @@
               id="btn-admin-theme"
               (click)="toggleThemeMenu()"
               class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
-              [title]="'Theme: ' + theme() + ' [F4]'"
+              appTooltip="Change Color Palette [F4]"
+              tooltipPosition="bottom"
               aria-label="Change Theme"
             >
               <span
@@ -101,7 +102,8 @@
               id="btn-admin-font"
               (click)="toggleFontMenu()"
               class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
-              [title]="'Font: ' + font() + ' [F6]'"
+              appTooltip="Change Reading Font [F6]"
+              tooltipPosition="bottom"
               aria-label="Switch Font"
             >
               <svg lucideType class="w-3.5 h-3.5 text-[var(--text-muted)]"></svg>
@@ -142,7 +144,8 @@
             type="button"
             (click)="navigateTo('landing')"
             class="flex items-center gap-1 p-1 sm:px-2 sm:py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[var(--text-primary)] text-[11px] cursor-pointer"
-            title="Guest View [F1]"
+            appTooltip="Switch to Public Guest View [F1]"
+            tooltipPosition="bottom"
             aria-label="Guest View"
           >
             <svg lucideExternalLink class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
@@ -154,7 +157,8 @@
             type="button"
             (click)="logoutAdmin()"
             class="flex items-center gap-1 p-1 sm:px-2 sm:py-1 bg-[var(--bg-canvas)] border border-[var(--accent-fkey)] text-[var(--accent-fkey)] hover:bg-[var(--accent-fkey)] hover:text-white text-[11px] cursor-pointer"
-            title="Terminate Session"
+            appTooltip="Terminate Administrator Session [F8]"
+            tooltipPosition="bottom"
             aria-label="Terminate Session"
           >
             <svg lucideLogOut class="w-3.5 h-3.5"></svg>
@@ -247,7 +251,8 @@
             id="btn-toggle-sidebar"
             (click)="toggleSidebar()"
             class="p-1 hover:bg-[var(--bg-highlight)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-transparent hover:border-[var(--border-color)] cursor-pointer"
-            [title]="sidebarOpen() ? 'Hide Sidebar' : 'Show Sidebar'"
+            [appTooltip]="sidebarOpen() ? 'Collapse Navigation Sidebar' : 'Expand Navigation Sidebar'"
+            tooltipPosition="bottom"
             aria-label="Toggle Sidebar"
           >
             @if (sidebarOpen()) {
@@ -310,7 +315,8 @@
             id="btn-topbar-theme"
             (click)="toggleThemeMenu()"
             class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
-            [title]="'Theme: ' + theme() + ' [F4]'"
+            appTooltip="Change Color Palette [F4]"
+            tooltipPosition="bottom"
             aria-label="Change Theme"
           >
             <span
@@ -372,7 +378,8 @@
             id="btn-topbar-font"
             (click)="toggleFontMenu()"
             class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
-            [title]="'Font: ' + font() + ' [F6]'"
+            appTooltip="Change Reading Font [F6]"
+            tooltipPosition="bottom"
             aria-label="Switch Font"
           >
             <svg lucideType class="w-3.5 h-3.5 text-[var(--text-muted)]"></svg>
@@ -421,7 +428,8 @@
           [class.text-[var(--text-primary)]]="!zenMode()"
           [class.border-[var(--border-color)]]="!zenMode()"
           [class.hover:border-[var(--text-primary)]]="!zenMode()"
-          [title]="zenMode() ? 'Exit Zen Mode (Esc)' : 'Zen Reading Mode [F3]'"
+          [appTooltip]="zenMode() ? 'Exit Zen Mode (Esc)' : 'Zen Reading Mode [F3]'"
+          tooltipPosition="bottom"
           aria-label="Zen Mode"
         >
           @if (zenMode()) {
@@ -437,37 +445,11 @@
           id="btn-topbar-help"
           (click)="openHelp()"
           class="p-1 border border-[var(--border-color)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] cursor-pointer"
-          title="Help / Shortcuts [F1]"
+          appTooltip="Keyboard Shortcuts & Diagnostics [F1]"
+          tooltipPosition="bottom"
           aria-label="Help"
         >
           <svg lucideHelpCircle class="w-3.5 h-3.5"></svg>
-        </button>
-
-        <!-- Admin Switch -->
-        <button
-          type="button"
-          id="btn-topbar-admin"
-          (click)="navigateTo(isAdmin() ? 'admin' : 'admin-auth')"
-          class="flex items-center gap-1 p-1 sm:px-1.5 sm:py-1 text-[11px] border cursor-pointer"
-          [class.bg-[var(--accent-fkey)]]="currentRoute() === 'admin-auth'"
-          [class.text-white]="currentRoute() === 'admin-auth'"
-          [class.border-[var(--accent-fkey)]]="currentRoute() === 'admin-auth'"
-          [class.bg-[var(--bg-canvas)]]="currentRoute() !== 'admin-auth'"
-          [class.text-[var(--accent-terminal)]]="currentRoute() !== 'admin-auth' && isAdmin()"
-          [class.border-[var(--accent-terminal)]]="currentRoute() !== 'admin-auth' && isAdmin()"
-          [class.text-[var(--text-muted)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
-          [class.border-[var(--border-color)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
-          [class.hover:border-[var(--text-primary)]]="currentRoute() !== 'admin-auth' && !isAdmin()"
-          [title]="isAdmin() ? 'Admin Dashboard [F8]' : 'Admin Login [F8]'"
-          aria-label="Admin"
-        >
-          @if (isAdmin()) {
-            <svg lucideUnlock class="w-3.5 h-3.5 text-[var(--accent-terminal)]"></svg>
-            <span class="hidden sm:inline">ADMIN</span>
-          } @else {
-            <svg lucideLock class="w-3.5 h-3.5"></svg>
-            <span class="hidden sm:inline">LOGIN</span>
-          }
         </button>
 
         <!-- System Clock on XL screens -->

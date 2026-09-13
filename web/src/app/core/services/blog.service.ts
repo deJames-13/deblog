@@ -1,6 +1,7 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
+import { APP_CONFIG, DEFAULT_APP_CONFIG } from '../config/app-config';
 import {
   AdminTab,
   BlogComment,
@@ -13,6 +14,7 @@ import {
   ToastMessage,
   TypographyFont,
   UserAccount,
+  UserRole,
 } from '../models/blog.model';
 import {
   INITIAL_COMMENTS,
@@ -22,6 +24,18 @@ import {
   INITIAL_USERS,
 } from '../data/mock-data';
 import { filterProfanity } from '../data/profanity-list';
+import {
+  PostDetailDto,
+  PostListItemDto,
+  CommentResponseDto,
+  CommentCreatedResponseDto,
+  AdminCommentResponseDto,
+  UserProfileDto,
+} from '../models/api.dto';
+import { PostsApiService } from '../api/posts-api.service';
+import { CommentsApiService } from '../api/comments-api.service';
+import { UsersApiService } from '../api/users-api.service';
+import { SupabaseAuthService } from '../auth/supabase-auth.service';
 
 const LOCAL_STORAGE_KEYS = {
   THEME: 'bios_blog_theme',
@@ -32,8 +46,37 @@ const LOCAL_STORAGE_KEYS = {
   MEDIA: 'bios_blog_media',
   PROFILE: 'bios_blog_profile',
   LIKED: 'bios_blog_liked_ids',
-  AUTH: 'bios_blog_is_admin',
 };
+
+function getInitialRoute(): 'landing' | 'post' | 'search' | 'admin' {
+  if (typeof window === 'undefined') return 'landing';
+  const path = window.location.pathname;
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/post/')) return 'post';
+  return 'landing';
+}
+
+function getInitialPostId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname;
+  if (path.startsWith('/post/')) {
+    const parts = path.split('/');
+    return parts[2]?.split('?')[0]?.split('#')[0] || null;
+  }
+  return null;
+}
+
+function getInitialAdminTab(): AdminTab {
+  if (typeof window === 'undefined') return 'dashboard';
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab') as AdminTab;
+    const validTabs: AdminTab[] = ['dashboard', 'posts', 'users', 'comments', 'media', 'settings'];
+    return tab && validTabs.includes(tab) ? tab : 'dashboard';
+  } catch {
+    return 'dashboard';
+  }
+}
 
 function getSaved<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined' || !window.localStorage) return fallback;
@@ -63,11 +106,178 @@ function getSavedProfile(): SiteProfile {
   return p;
 }
 
+function mapPostDtoToBlogPost(dto: PostListItemDto | PostDetailDto): BlogPost {
+  let statusStr: PostStatus = 'draft';
+  if (typeof dto.status === 'string') {
+    statusStr = dto.status.toLowerCase() as PostStatus;
+  } else if (dto.status === 1) {
+    statusStr = 'published';
+  } else if (dto.status === 2) {
+    statusStr = 'hidden';
+  } else if (dto.status === 3) {
+    statusStr = 'archived';
+  }
+
+  const content = 'content' in dto ? dto.content : '';
+  const wordCount = (content || dto.summary || '').split(/\s+/).filter(Boolean).length;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+  return {
+    id: dto.id,
+    slug: dto.slug,
+    title: dto.title,
+    subtitle: dto.summary || '',
+    excerpt: dto.summary || (content ? content.slice(0, 160) + '...' : 'No summary provided.'),
+    content: content,
+    cover_image: dto.coverImageUrl || undefined,
+    category: dto.category || 'Engineering',
+    tags: dto.tags && dto.tags.length > 0 ? dto.tags : ['tech'],
+    status: statusStr,
+    likes_count: dto.analytics?.likes ?? 0,
+    views_count: dto.analytics?.views ?? 0,
+    reading_time_minutes: readingTime,
+    created_at: dto.createdAt,
+    updated_at: 'updatedAt' in dto ? dto.updatedAt : dto.createdAt,
+    published_at: dto.publishedAt || undefined,
+    is_featured: dto.isFeatured ?? false,
+  };
+}
+
+function mapCommentDtoToBlogComment(dto: CommentResponseDto, postTitle = 'Article Discussion'): BlogComment {
+  let statusStr: CommentStatus = 'pending';
+  if (typeof dto.status === 'string') {
+    statusStr = dto.status.toLowerCase() as CommentStatus;
+  } else if (dto.status === 1) {
+    statusStr = 'approved';
+  } else if (dto.status === 2) {
+    statusStr = 'rejected';
+  } else if (dto.status === 3) {
+    statusStr = 'spam';
+  }
+
+  return {
+    id: dto.id,
+    post_id: dto.postId,
+    post_title: postTitle,
+    author_name: dto.author?.displayName || dto.author?.username || 'Guest Reader',
+    author_email: 'verified-guest@deblog.local',
+    content: dto.content,
+    status: statusStr,
+    likes_count: 0,
+    created_at: dto.createdAt,
+  };
+}
+
+function mapAdminCommentDtoToBlogComment(dto: AdminCommentResponseDto): BlogComment {
+  let statusStr: CommentStatus = 'pending';
+  if (dto.status === 1 || dto.status === 'Approved') {
+    statusStr = 'approved';
+  } else if (dto.status === 2 || dto.status === 'Rejected') {
+    statusStr = 'rejected';
+  } else if (dto.status === 3 || dto.status === 'Spam') {
+    statusStr = 'spam';
+  }
+
+  return {
+    id: dto.id,
+    post_id: dto.postId,
+    post_title: dto.postTitle || 'Article Entry',
+    author_name: dto.author?.displayName || dto.author?.username || 'Guest Reader',
+    author_email: 'verified-guest@deblog.local',
+    content: dto.content,
+    status: statusStr,
+    likes_count: 0,
+    created_at: dto.createdAt,
+  };
+}
+
+function mapUserDtoToUserAccount(dto: UserProfileDto): UserAccount {
+  const roleLower = (dto.role || 'user').toLowerCase();
+  const role: UserRole = roleLower === 'admin' ? 'admin' : 'commenter';
+  const isBanned = dto.status === 2 || dto.status === 'Banned' || dto.status === 'Suspended';
+
+  return {
+    id: dto.id,
+    name: dto.displayName || dto.username || 'Community Member',
+    email: dto.email,
+    role,
+    status: isBanned ? 'banned' : 'active',
+    comments_count: 0,
+    created_at: dto.createdAt,
+    last_active_at: dto.createdAt,
+  };
+}
+
+function havePostsChanged(current: BlogPost[], next: BlogPost[]): boolean {
+  if (current.length !== next.length) return true;
+  for (let i = 0; i < current.length; i++) {
+    const a = current[i];
+    const b = next[i];
+    if (
+      a.id !== b.id ||
+      a.status !== b.status ||
+      a.title !== b.title ||
+      a.excerpt !== b.excerpt ||
+      a.content !== b.content ||
+      a.cover_image !== b.cover_image ||
+      a.views_count !== b.views_count ||
+      a.likes_count !== b.likes_count ||
+      a.updated_at !== b.updated_at ||
+      a.published_at !== b.published_at ||
+      a.is_featured !== b.is_featured
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function haveCommentsChanged(current: BlogComment[], next: BlogComment[]): boolean {
+  if (current.length !== next.length) return true;
+  for (let i = 0; i < current.length; i++) {
+    const a = current[i];
+    const b = next[i];
+    if (
+      a.id !== b.id ||
+      a.status !== b.status ||
+      a.content !== b.content ||
+      a.likes_count !== b.likes_count ||
+      a.author_name !== b.author_name
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function haveUsersChanged(current: UserAccount[], next: UserAccount[]): boolean {
+  if (current.length !== next.length) return true;
+  for (let i = 0; i < current.length; i++) {
+    const a = current[i];
+    const b = next[i];
+    if (
+      a.id !== b.id ||
+      a.role !== b.role ||
+      a.status !== b.status ||
+      a.name !== b.name ||
+      a.email !== b.email
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class BlogService {
   private readonly router = inject(Router);
+  private readonly config = inject(APP_CONFIG, { optional: true }) ?? DEFAULT_APP_CONFIG;
+  private readonly postsApi = inject(PostsApiService);
+  private readonly commentsApi = inject(CommentsApiService);
+  private readonly usersApi = inject(UsersApiService);
+  readonly authService = inject(SupabaseAuthService);
 
   // Appearance Signals
   readonly theme = signal<ThemeMode>(
@@ -80,9 +290,9 @@ export class BlogService {
   readonly sidebarOpen = signal<boolean>(true);
 
   // Navigation Signals
-  readonly currentRoute = signal<'landing' | 'post' | 'search' | 'admin-auth' | 'admin'>('landing');
-  readonly selectedPostId = signal<string | null>(null);
-  readonly adminTab = signal<AdminTab>('dashboard');
+  readonly currentRoute = signal<'landing' | 'post' | 'search' | 'admin'>(getInitialRoute());
+  readonly selectedPostId = signal<string | null>(getInitialPostId());
+  readonly adminTab = signal<AdminTab>(getInitialAdminTab());
 
   // Search & Filter Signals
   readonly searchQuery = signal<string>('');
@@ -90,10 +300,16 @@ export class BlogService {
   readonly selectedMonth = signal<string | null>(null);
   readonly currentPage = signal<number>(1);
 
-  // Auth Signal
-  readonly isAdmin = signal<boolean>(
-    typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH) === 'true' : false
-  );
+  // Loading & Offline Fallback States (5 Mandatory States Support)
+  readonly isLoading = signal<boolean>(false);
+  readonly isSyncing = signal<boolean>(false);
+  readonly isOfflineFallback = signal<boolean>(false);
+  readonly apiError = signal<string | null>(null);
+  readonly lastSyncedAt = signal<Date | null>(null);
+
+  // Auth Signal - strictly synchronized with SupabaseAuthService
+  readonly isAdmin = signal<boolean>(this.authService.isAdmin());
+  readonly isCheckingAuth = this.authService.isCheckingAuth;
 
   // Modal Signals
   readonly commentModalOpen = signal<boolean>(false);
@@ -119,7 +335,7 @@ export class BlogService {
   readonly activePost = computed(() => {
     const id = this.selectedPostId();
     const list = this.posts();
-    return list.find((p) => p.id === id) || list[0] || null;
+    return list.find((p) => p.id === id || p.slug === id) || list[0] || null;
   });
 
   readonly publishedPosts = computed(() => {
@@ -135,6 +351,19 @@ export class BlogService {
   });
 
   constructor() {
+    // Keep auth state synchronized with SupabaseAuthService
+    effect(() => {
+      const authIsAdmin = this.authService.isAdmin();
+      this.isAdmin.set(authIsAdmin);
+    });
+
+    // Clear legacy mock auth flag if not authenticated
+    if (typeof localStorage !== 'undefined') {
+      if (!this.authService.isAuthenticated()) {
+        localStorage.removeItem('bios_blog_is_admin');
+      }
+    }
+
     // Synchronize HTML attributes & localStorage with theme & font
     effect(() => {
       const currentTheme = this.theme();
@@ -153,7 +382,7 @@ export class BlogService {
       }
     });
 
-    // Auto-save changes to localStorage
+    // Auto-save changes to localStorage as fallback cache
     effect(() => {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(LOCAL_STORAGE_KEYS.POSTS, JSON.stringify(this.posts()));
@@ -190,12 +419,7 @@ export class BlogService {
       }
     });
 
-    effect(() => {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH, this.isAdmin() ? 'true' : 'false');
-      }
-    });
-
+    // Handle router navigation synchronization
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
@@ -205,20 +429,274 @@ export class BlogService {
           const id = parts[2]?.split('?')[0]?.split('#')[0];
           if (id) {
             this.selectedPostId.set(id);
+            this.fetchPostDetail(id);
           }
           this.currentRoute.set('post');
         } else if (url.startsWith('/admin-auth')) {
-          this.currentRoute.set('admin-auth');
+          this.currentRoute.set('admin');
+          this.router.navigate(['/admin'], { queryParamsHandling: 'preserve', replaceUrl: true });
         } else if (url.startsWith('/admin')) {
-          if (!this.isAdmin()) {
-            this.currentRoute.set('admin-auth');
-          } else {
-            this.currentRoute.set('admin');
+          this.currentRoute.set('admin');
+          const queryStr = url.includes('?') ? url.split('?')[1] : '';
+          const searchParams = new URLSearchParams(queryStr);
+          const tab = searchParams.get('tab') as AdminTab | null;
+          const validTabs: AdminTab[] = ['dashboard', 'posts', 'users', 'comments', 'media', 'settings'];
+          if (tab && validTabs.includes(tab)) {
+            this.adminTab.set(tab);
           }
         } else if (url === '/' || url === '') {
           this.currentRoute.set('landing');
         }
       });
+
+    // Initial Live Data Load & Start Background Sync
+    this.loadInitialData();
+    this.startBackgroundSync();
+  }
+
+  private syncIntervalTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityListener: (() => void) | null = null;
+
+  /**
+   * Starts periodic background synchronization with backend database.
+   * Also listens for document visibility change to sync immediately on window focus.
+   * Default interval is 10 minutes (600,000 ms).
+   */
+  startBackgroundSync(intervalMs = 600000): void {
+    this.stopBackgroundSync();
+
+    if (typeof window !== 'undefined') {
+      this.syncIntervalTimer = setInterval(() => {
+        this.syncFromBackend({ silent: true });
+      }, intervalMs);
+
+      this.visibilityListener = () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          this.syncFromBackend({ silent: true });
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityListener);
+    }
+  }
+
+  /**
+   * Stops background synchronization.
+   */
+  stopBackgroundSync(): void {
+    if (this.syncIntervalTimer) {
+      clearInterval(this.syncIntervalTimer);
+      this.syncIntervalTimer = null;
+    }
+    if (typeof document !== 'undefined' && this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
+  }
+
+  /**
+   * Synchronizes data with the live backend database, checking differences before triggering rerenders.
+   * If silent is true (default during background sync), isLoading is NOT set, preventing skeleton flashes.
+   */
+  async syncFromBackend(options?: { silent?: boolean }): Promise<boolean> {
+    const silent = options?.silent ?? false;
+    this.isSyncing.set(true);
+    if (!silent && this.posts().length === 0) {
+      this.isLoading.set(true);
+    }
+    let hasChanges = false;
+    try {
+      const result = await firstValueFrom(
+        this.postsApi.getPosts({ page: 1, pageSize: 50, publishedOnly: !this.isAdmin() })
+      );
+
+      if (result && result.items) {
+        const mapped = result.items.map(mapPostDtoToBlogPost);
+        if (havePostsChanged(this.posts(), mapped)) {
+          this.posts.set(mapped);
+          hasChanges = true;
+        }
+        this.isOfflineFallback.set(false);
+        this.lastSyncedAt.set(new Date());
+      }
+
+      // If admin is active, sync admin data as well silently
+      if (this.isAdmin()) {
+        await Promise.allSettled([
+          this.loadAdminComments(silent),
+          this.loadAdminUsers(silent),
+        ]);
+      }
+      return hasChanges;
+    } catch (err: unknown) {
+      console.warn('[BlogService] Backend sync failed:', err);
+      if (this.config.useMockFallback && this.posts().length === 0) {
+        this.isOfflineFallback.set(true);
+        this.posts.set(INITIAL_POSTS);
+      }
+      return false;
+    } finally {
+      this.isSyncing.set(false);
+      if (!silent) {
+        this.isLoading.set(false);
+      }
+    }
+  }
+
+  /**
+   * Initial data load: attempts live backend fetch with graceful mock fallback
+   */
+  async loadInitialData(): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    this.isLoading.set(true);
+    this.apiError.set(null);
+    await this.syncFromBackend({ silent: false });
+  }
+
+  /**
+   * Loads posts for admin management (includes drafts, hidden, archived)
+   */
+  async loadAdminPosts(silent = false): Promise<void> {
+    if (!silent) {
+      this.isLoading.set(true);
+    }
+    this.apiError.set(null);
+    try {
+      const result = await firstValueFrom(
+        this.postsApi.getPosts({ page: 1, pageSize: 50, publishedOnly: false })
+      );
+      if (result && result.items) {
+        const mapped = result.items.map(mapPostDtoToBlogPost);
+        if (havePostsChanged(this.posts(), mapped)) {
+          this.posts.set(mapped);
+        }
+        this.isOfflineFallback.set(false);
+      }
+    } catch (err: unknown) {
+      console.warn('[BlogService] Backend admin posts fetch failed, evaluating fallback:', err);
+      if (this.config.useMockFallback) {
+        this.isOfflineFallback.set(true);
+      } else {
+        this.apiError.set('Failed to retrieve admin posts from backend.');
+      }
+    } finally {
+      if (!silent) {
+        this.isLoading.set(false);
+      }
+    }
+  }
+
+  /**
+   * Loads all comments for admin moderation from backend
+   */
+  async loadAdminComments(silent = false): Promise<void> {
+    if (!silent) {
+      this.isLoading.set(true);
+    }
+    this.apiError.set(null);
+    try {
+      const result = await firstValueFrom(
+        this.commentsApi.getAdminComments({ page: 1, pageSize: 50 })
+      );
+      if (result && result.items) {
+        const mapped = result.items.map(mapAdminCommentDtoToBlogComment);
+        if (haveCommentsChanged(this.comments(), mapped)) {
+          this.comments.set(mapped);
+        }
+        this.isOfflineFallback.set(false);
+      }
+    } catch (err: unknown) {
+      console.warn('[BlogService] Backend admin comments fetch failed, evaluating fallback:', err);
+      if (this.config.useMockFallback) {
+        this.isOfflineFallback.set(true);
+      } else {
+        this.apiError.set('Failed to retrieve admin comments from backend.');
+      }
+    } finally {
+      if (!silent) {
+        this.isLoading.set(false);
+      }
+    }
+  }
+
+  /**
+   * Loads all registered users for admin management from backend
+   */
+  async loadAdminUsers(silent = false): Promise<void> {
+    if (!silent) {
+      this.isLoading.set(true);
+    }
+    this.apiError.set(null);
+    try {
+      const result = await firstValueFrom(
+        this.usersApi.getAdminUsers({ page: 1, pageSize: 50 })
+      );
+      if (result && result.items) {
+        const mapped = result.items.map(mapUserDtoToUserAccount);
+        if (haveUsersChanged(this.users(), mapped)) {
+          this.users.set(mapped);
+        }
+        this.isOfflineFallback.set(false);
+      }
+    } catch (err: unknown) {
+      console.warn('[BlogService] Backend admin users fetch failed, evaluating fallback:', err);
+      if (this.config.useMockFallback) {
+        this.isOfflineFallback.set(true);
+      } else {
+        this.apiError.set('Failed to retrieve admin users from backend.');
+      }
+    } finally {
+      if (!silent) {
+        this.isLoading.set(false);
+      }
+    }
+  }
+
+  /**
+   * Fetches full post detail by ID or slug from the live backend
+   */
+  async fetchPostDetail(idOrSlug: string): Promise<BlogPost | null> {
+    try {
+      const detailDto = await firstValueFrom(this.postsApi.getPostByIdOrSlug(idOrSlug));
+      if (detailDto) {
+        const blogPost = mapPostDtoToBlogPost(detailDto);
+        this.posts.update((prev) => {
+          const index = prev.findIndex((p) => p.id === blogPost.id || p.slug === blogPost.slug);
+          if (index >= 0) {
+            const copy = [...prev];
+            copy[index] = blogPost;
+            return copy;
+          }
+          return [blogPost, ...prev];
+        });
+
+        // Also fetch approved comments for this post
+        this.fetchPostComments(detailDto.id);
+        return blogPost;
+      }
+    } catch (err) {
+      console.warn(`[BlogService] Could not fetch detail for ${idOrSlug} from backend:`, err);
+    }
+    return this.posts().find((p) => p.id === idOrSlug || p.slug === idOrSlug) || null;
+  }
+
+  /**
+   * Fetches comments for a specific post
+   */
+  async fetchPostComments(postId: string): Promise<void> {
+    try {
+      const commentsDtos = await firstValueFrom(this.commentsApi.getPostComments(postId));
+      if (commentsDtos && commentsDtos.length > 0) {
+        const activeTitle = this.activePost()?.title || 'Article Entry';
+        const mappedComments = commentsDtos.map((c) => mapCommentDtoToBlogComment(c, activeTitle));
+        this.comments.update((prev) => {
+          const otherComments = prev.filter((c) => c.post_id !== postId);
+          return [...mappedComments, ...otherComments];
+        });
+      }
+    } catch (err) {
+      console.warn(`[BlogService] Could not fetch comments for post ${postId}:`, err);
+    }
   }
 
   // Appearance Methods
@@ -243,26 +721,31 @@ export class BlogService {
   }
 
   // Navigation Methods
-  navigateTo(route: 'landing' | 'post' | 'search' | 'admin-auth' | 'admin', postId?: string): void {
+  navigateTo(route: 'landing' | 'post' | 'search' | 'admin', postId?: string): void {
     if (route === 'post' && postId) {
       this.selectedPostId.set(postId);
-      // Increment view count
+      const targetPost = this.posts().find((p) => p.id === postId || p.slug === postId);
+
+      // Increment view count locally
       this.posts.update((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, views_count: p.views_count + 1 } : p))
+        prev.map((p) => (p.id === postId || p.slug === postId ? { ...p, views_count: p.views_count + 1 } : p))
       );
-      this.currentRoute.set('post');
-      this.router.navigate(['/post', postId]);
-    } else if (route === 'admin') {
-      if (!this.isAdmin()) {
-        this.currentRoute.set('admin-auth');
-        this.router.navigate(['/admin-auth']);
-        return;
+
+      // Fire analytics view tracking to backend asynchronously
+      if (targetPost) {
+        this.postsApi.trackView(targetPost.slug || targetPost.id).subscribe({
+          next: () => {},
+          error: () => {},
+        });
       }
+
+      this.currentRoute.set('post');
+      this.router.navigate(['/post', targetPost?.slug || postId]);
+    } else if (route === 'admin') {
       this.currentRoute.set('admin');
-      this.router.navigate(['/admin']);
-    } else if (route === 'admin-auth') {
-      this.currentRoute.set('admin-auth');
-      this.router.navigate(['/admin-auth']);
+      this.router.navigate(['/admin'], {
+        queryParams: { tab: this.adminTab() },
+      });
     } else {
       this.currentRoute.set('landing');
       this.router.navigate(['/']);
@@ -275,6 +758,22 @@ export class BlogService {
 
   setAdminTab(tab: AdminTab): void {
     this.adminTab.set(tab);
+    if (this.isAdmin()) {
+      if (tab === 'posts') {
+        this.loadAdminPosts();
+      } else if (tab === 'comments') {
+        this.loadAdminComments();
+      } else if (tab === 'users') {
+        this.loadAdminUsers();
+      }
+    }
+    if (typeof window !== 'undefined' && this.currentRoute() === 'admin') {
+      this.router.navigate(['/admin'], {
+        queryParams: { tab },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   // Search & Filter Methods
@@ -300,18 +799,27 @@ export class BlogService {
   }
 
   likePost(postId: string): void {
-    if (this.hasLikedPost(postId)) {
-      this.likedPosts.update((prev) => prev.filter((id) => id !== postId));
+    const post = this.posts().find((p) => p.id === postId || p.slug === postId);
+    if (!post) return;
+
+    if (this.hasLikedPost(post.id)) {
+      this.likedPosts.update((prev) => prev.filter((id) => id !== post.id));
       this.posts.update((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, likes_count: Math.max(0, p.likes_count - 1) } : p))
+        prev.map((p) => (p.id === post.id ? { ...p, likes_count: Math.max(0, p.likes_count - 1) } : p))
       );
       this.addToast('Unliked post', 'info');
     } else {
-      this.likedPosts.update((prev) => [...prev, postId]);
+      this.likedPosts.update((prev) => [...prev, post.id]);
       this.posts.update((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, likes_count: p.likes_count + 1 } : p))
+        prev.map((p) => (p.id === post.id ? { ...p, likes_count: p.likes_count + 1 } : p))
       );
       this.addToast('Article Liked! Thank you.', 'success');
+
+      // Send like analytics to live backend
+      this.postsApi.trackLike(post.slug || post.id).subscribe({
+        next: () => {},
+        error: () => {},
+      });
     }
   }
 
@@ -366,10 +874,12 @@ export class BlogService {
       };
     }
 
-    const post = this.posts().find((p) => p.id === postId);
+    const post = this.posts().find((p) => p.id === postId || p.slug === postId);
+    const resolvedPostId = post?.id || postId;
+
     const newComment: BlogComment = {
       id: `comm-${Date.now()}`,
-      post_id: postId,
+      post_id: resolvedPostId,
       post_title: post?.title || 'Personal Entry',
       author_name: authorName?.trim() || 'Anonymous Guest',
       author_email: authorEmail.trim(),
@@ -379,7 +889,27 @@ export class BlogService {
       created_at: new Date().toISOString(),
     };
 
+    // Optimistically add to local comments
     this.comments.update((prev) => [newComment, ...prev]);
+
+    // Send comment to backend
+    this.commentsApi
+      .createComment(resolvedPostId, {
+        content: content.trim(),
+        email: authorEmail.trim(),
+        displayName: authorName?.trim(),
+      })
+      .subscribe({
+        next: (created: CommentCreatedResponseDto) => {
+          this.commentsApi.saveCommentToken(created.id, created.managementToken);
+          this.comments.update((prev) =>
+            prev.map((c) => (c.id === newComment.id ? { ...c, id: created.id } : c))
+          );
+        },
+        error: (err: unknown) => {
+          console.warn('[BlogService] Live comment creation failed, kept locally:', err);
+        },
+      });
 
     // Ensure commenter is recorded in users table
     this.users.update((prev) => {
@@ -414,21 +944,46 @@ export class BlogService {
   updateCommentStatus(id: string, status: CommentStatus): void {
     this.comments.update((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
     this.addToast(`Comment marked as ${status.toUpperCase()}`, 'info');
+
+    // Sync status change to backend if Admin
+    if (this.isAdmin()) {
+      const statusMap: Record<CommentStatus, string> = {
+        pending: 'Pending',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        spam: 'Spam',
+      };
+      this.commentsApi.updateCommentStatus(id, statusMap[status]).subscribe({
+        next: () => {},
+        error: (err: unknown) => console.warn('[BlogService] Backend comment status update failed:', err),
+      });
+    }
   }
 
   deleteComment(id: string): void {
     this.comments.update((prev) => prev.filter((c) => c.id !== id));
     this.addToast('Comment deleted', 'warning');
+
+    this.commentsApi.deleteComment(id).subscribe({
+      next: () => {},
+      error: (err: unknown) => console.warn('[BlogService] Backend comment delete failed:', err),
+    });
   }
 
   batchUpdateComments(ids: string[], status: CommentStatus): void {
     this.comments.update((prev) => prev.map((c) => (ids.includes(c.id) ? { ...c, status } : c)));
     this.addToast(`${ids.length} comments updated to ${status.toUpperCase()}`, 'success');
+
+    if (this.isAdmin()) {
+      ids.forEach((id) => this.updateCommentStatus(id, status));
+    }
   }
 
   batchDeleteComments(ids: string[]): void {
     this.comments.update((prev) => prev.filter((c) => !ids.includes(c.id)));
     this.addToast(`${ids.length} comments permanently removed`, 'warning');
+
+    ids.forEach((id) => this.deleteComment(id));
   }
 
   // Post CRUD Methods
@@ -450,7 +1005,7 @@ export class BlogService {
       cover_image:
         data.cover_image ||
         'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80',
-      category: data.category || 'General',
+      category: data.category || 'Engineering',
       tags: data.tags || ['Engineering'],
       status: data.status || 'draft',
       likes_count: 0,
@@ -466,6 +1021,31 @@ export class BlogService {
     };
 
     this.posts.update((prev) => [newPost, ...prev]);
+
+    // Send to backend API
+    this.postsApi
+      .createPost({
+        title: newPost.title,
+        slug: newPost.slug,
+        summary: newPost.excerpt,
+        content: newPost.content,
+        status: newPost.status === 'published' ? 'Published' : 'Draft',
+        coverImageUrl: newPost.cover_image,
+        category: newPost.category,
+        tags: newPost.tags,
+        isFeatured: newPost.is_featured,
+      })
+      .subscribe({
+        next: (created: PostDetailDto) => {
+          this.posts.update((prev) =>
+            prev.map((p) => (p.id === newPost.id ? mapPostDtoToBlogPost(created) : p))
+          );
+        },
+        error: (err: unknown) => {
+          console.warn('[BlogService] Post creation failed on backend, kept locally:', err);
+        },
+      });
+
     this.addToast(`Post "${newPost.title}" created (${newPost.status})`, 'success');
     return newPost;
   }
@@ -490,6 +1070,27 @@ export class BlogService {
         return p;
       })
     );
+
+    // Dispatch update to backend if post ID is valid Guid
+    if (postId.length > 20 && postId.includes('-') && !postId.startsWith('post-')) {
+      this.postsApi
+        .updatePost(postId, {
+          title: data.title,
+          slug: data.slug,
+          summary: data.excerpt,
+          content: data.content,
+          status: data.status === 'published' ? 'Published' : data.status === 'draft' ? 'Draft' : undefined,
+          coverImageUrl: data.cover_image,
+          category: data.category,
+          tags: data.tags,
+          isFeatured: data.is_featured,
+        })
+        .subscribe({
+          next: () => {},
+          error: (err: unknown) => console.warn('[BlogService] Backend update failed:', err),
+        });
+    }
+
     this.addToast('Post updated successfully', 'success');
   }
 
@@ -499,12 +1100,34 @@ export class BlogService {
         p.id === postId ? { ...p, status, updated_at: new Date().toISOString() } : p
       )
     );
+
+    if (postId.length > 20 && postId.includes('-') && !postId.startsWith('post-')) {
+      const statusMap: Record<PostStatus, string> = {
+        published: 'Published',
+        draft: 'Draft',
+        hidden: 'Hidden',
+        archived: 'Archived',
+      };
+      this.postsApi.updatePostStatus(postId, statusMap[status]).subscribe({
+        next: () => {},
+        error: (err: unknown) => console.warn('[BlogService] Backend status update failed:', err),
+      });
+    }
+
     this.addToast(`Post status changed to ${status.toUpperCase()}`, 'info');
   }
 
   deletePost(postId: string): void {
     this.posts.update((prev) => prev.filter((p) => p.id !== postId));
-    this.addToast('Post permanently deleted', 'warning');
+
+    if (postId.length > 20 && postId.includes('-') && !postId.startsWith('post-')) {
+      this.postsApi.softDeletePost(postId).subscribe({
+        next: () => {},
+        error: (err: unknown) => console.warn('[BlogService] Backend delete failed:', err),
+      });
+    }
+
+    this.addToast('Post moved to trash / deleted', 'warning');
   }
 
   // User Actions
@@ -519,7 +1142,23 @@ export class BlogService {
   }
 
   deleteUser(userId: string): void {
+    const targetUser = this.users().find((u) => u.id === userId);
     this.users.update((prev) => prev.filter((u) => u.id !== userId));
+
+    const isGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (isGuid) {
+      this.usersApi.deleteUser(userId).subscribe({
+        next: () => {},
+        error: (err: unknown) => {
+          console.warn('[BlogService] Backend delete user failed:', err);
+          if (targetUser) {
+            this.users.update((prev) => [...prev, targetUser]);
+          }
+          this.addToast('Failed to delete user on server', 'error');
+        },
+      });
+    }
+
     this.addToast('User record removed', 'warning');
   }
 
@@ -562,51 +1201,48 @@ export class BlogService {
   // Profile Actions
   updateProfile(data: Partial<SiteProfile>): void {
     this.profile.update((prev) => ({ ...prev, ...data }));
+
+    if (this.isAdmin()) {
+      this.usersApi
+        .updateCurrentUser({
+          displayName: data.name,
+          bio: data.bio,
+          avatarUrl: data.avatar_url,
+        })
+        .subscribe({
+          next: () => {},
+          error: (err: unknown) => console.warn('[BlogService] Profile backend update failed:', err),
+        });
+    }
+
     this.addToast('Profile & Branding updated', 'success');
   }
 
   // Auth Methods
-  loginAdmin(usernameOrPass: string, optionalPass?: string): boolean {
-    let username = '';
-    let password = '';
+  async loginAdmin(usernameOrPass: string, optionalPass?: string): Promise<boolean> {
+    const email = optionalPass !== undefined ? usernameOrPass : this.config.authorEmail;
+    const password = optionalPass !== undefined ? optionalPass : usernameOrPass;
 
-    if (optionalPass !== undefined) {
-      username = usernameOrPass.trim();
-      password = optionalPass.trim();
-    } else {
-      password = usernameOrPass.trim();
-    }
-
-    const cleanPass = password.toLowerCase();
-    const cleanUser = username.toLowerCase();
-
-    const isUserValid =
-      optionalPass !== undefined
-        ? cleanUser === 'admin' ||
-          cleanUser === 'derick' ||
-          cleanUser === 'drckespinosa.13@gmail.com' ||
-          cleanUser.length > 0
-        : true;
-
-    const isPassValid =
-      cleanPass === 'admin' ||
-      cleanPass === 'bios2026' ||
-      cleanPass === '1234' ||
-      cleanPass === 'password';
-
-    if (isUserValid && isPassValid) {
+    const result = await this.authService.signInWithPassword(email, password);
+    if (result.success) {
       this.isAdmin.set(true);
       this.currentRoute.set('admin');
-      this.router.navigate(['/admin']);
+      this.loadAdminPosts();
+      this.loadAdminComments();
+      this.loadAdminUsers();
+      this.router.navigate(['/admin'], {
+        queryParams: { tab: this.adminTab() },
+      });
       this.addToast('BIOS Administrator Session Initialized. Welcome, Derick.', 'success');
       return true;
     } else {
-      this.addToast('Access Denied: Invalid Credentials', 'error');
+      this.addToast(result.error || 'Access Denied: Invalid Credentials', 'error');
       return false;
     }
   }
 
-  logoutAdmin(): void {
+  async logoutAdmin(): Promise<void> {
+    await this.authService.signOut();
     this.isAdmin.set(false);
     this.currentRoute.set('landing');
     this.router.navigate(['/']);

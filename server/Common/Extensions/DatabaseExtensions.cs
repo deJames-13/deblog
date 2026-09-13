@@ -28,6 +28,11 @@ public static class DatabaseExtensions
 
         var schema = configuration["DB_SCHEMA"] ?? "deblog";
 
+        if (!connectionString.Contains("Pooling=", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = $"{connectionString.TrimEnd(';')};Pooling=true;Minimum Pool Size=1;Maximum Pool Size=20;Connection Idle Lifetime=300;Keepalive=30;";
+        }
+
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseNpgsql(connectionString, npgsqlOptions =>

@@ -78,18 +78,16 @@ export class FKeyBarComponent {
           this.blogService.setSelectedCategory('Top Articles');
         },
       },
-      {
-        key: 'F8',
-        label: route === 'admin' ? 'EXIT' : 'ADMIN',
-        active: route === 'admin' || route === 'admin-auth',
-        action: () => {
-          if (route === 'admin' || route === 'admin-auth') {
-            this.blogService.navigateTo('landing');
-          } else {
-            this.blogService.navigateTo(isAdm ? 'admin' : 'admin-auth');
-          }
-        },
-      },
+      ...(route === 'admin' && isAdm
+        ? [
+            {
+              key: 'F8',
+              label: 'EXIT',
+              active: false,
+              action: () => this.blogService.navigateTo('landing'),
+            },
+          ]
+        : []),
       ...(route === 'post' || isZen
         ? [
             {
@@ -141,12 +139,10 @@ export class FKeyBarComponent {
       this.blogService.navigateTo('landing');
       this.blogService.setSelectedCategory('Top Articles');
     } else if (e.key === 'F8') {
-      e.preventDefault();
       const route = this.currentRoute();
-      if (route === 'admin' || route === 'admin-auth') {
+      if (route === 'admin' && this.isAdmin()) {
+        e.preventDefault();
         this.blogService.navigateTo('landing');
-      } else {
-        this.blogService.navigateTo(this.isAdmin() ? 'admin' : 'admin-auth');
       }
     } else if (e.key === 'Escape') {
       if (this.blogService.helpModalOpen()) {

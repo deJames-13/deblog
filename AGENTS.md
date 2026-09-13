@@ -1,0 +1,2 @@
+@[web/.agents/]
+@[server/.agents/]

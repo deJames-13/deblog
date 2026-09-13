@@ -150,4 +150,134 @@ public class CommentsTests : IClassFixture<TestWebApplicationFactory>
         var userResp = await userClient.GetAsync("/api/admin/comments");
         Assert.Equal(HttpStatusCode.Forbidden, userResp.StatusCode);
     }
+
+    [Fact]
+    public async Task Guest_CanSoftDeleteComment_WithToken_AndAdminCanListInTrash()
+    {
+        // Arrange
+        var post = await CreateTestPostAsync();
+        var anonClient = _factory.CreateAnonymousClient();
+        var adminClient = _factory.CreateAdminClient();
+
+        // 1. Guest creates comment
+        var createResp = await anonClient.PostAsJsonAsync($"/api/posts/{post.Id}/comments",
+            new CreateGuestCommentRequest("Trashable comment", "trashguest@example.com", "Trash Guest"));
+        var comment = await createResp.Content.ReadFromJsonAsync<CommentCreatedResponseDto>();
+        Assert.NotNull(comment);
+
+        // 2. Admin approves comment
+        await adminClient.PatchAsJsonAsync($"/api/admin/comments/{comment.Id}/status",
+            new UpdateCommentStatusRequest(CommentStatus.Approved));
+
+        // 3. Guest soft deletes with token
+        var deleteMessage = new HttpRequestMessage(HttpMethod.Delete, $"/api/comments/{comment.Id}");
+        deleteMessage.Headers.Add("X-Comment-Token", comment.ManagementToken.ToString());
+        var deleteResp = await anonClient.SendAsync(deleteMessage);
+        Assert.Equal(HttpStatusCode.OK, deleteResp.StatusCode);
+
+        // 4. Public feed excludes soft-deleted comment
+        var feed = await anonClient.GetFromJsonAsync<List<CommentResponseDto>>($"/api/posts/{post.Id}/comments");
+        Assert.NotNull(feed);
+        Assert.DoesNotContain(feed, c => c.Id == comment.Id);
+
+        // 5. Admin trash lists soft-deleted comment
+        var trashResp = await adminClient.GetFromJsonAsync<PagedResult<TrashCommentItemDto>>("/api/admin/comments/trash");
+        Assert.NotNull(trashResp);
+        var trashItem = trashResp.Items.FirstOrDefault(c => c.Id == comment.Id);
+        Assert.NotNull(trashItem);
+        Assert.NotNull(trashItem.DeletedAt);
+
+        // 6. Non-admin cannot view comment trash
+        var anonTrash = await anonClient.GetAsync("/api/admin/comments/trash");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonTrash.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_CanRestoreAndForceDeleteComment()
+    {
+        // Arrange
+        var post = await CreateTestPostAsync();
+        var anonClient = _factory.CreateAnonymousClient();
+        var adminClient = _factory.CreateAdminClient();
+
+        var createResp = await anonClient.PostAsJsonAsync($"/api/posts/{post.Id}/comments",
+            new CreateGuestCommentRequest("To restore and purge", "purgeguest@example.com", "Purge Guest"));
+        var comment = await createResp.Content.ReadFromJsonAsync<CommentCreatedResponseDto>();
+        Assert.NotNull(comment);
+
+        // Soft delete
+        var deleteMessage = new HttpRequestMessage(HttpMethod.Delete, $"/api/comments/{comment.Id}");
+        deleteMessage.Headers.Add("X-Comment-Token", comment.ManagementToken.ToString());
+        await anonClient.SendAsync(deleteMessage);
+
+        // Act 1 - Admin restores comment
+        var restoreResp = await adminClient.PostAsync($"/api/admin/comments/{comment.Id}/restore", null);
+        Assert.Equal(HttpStatusCode.OK, restoreResp.StatusCode);
+
+        // Verify no longer in trash
+        var trashResp = await adminClient.GetFromJsonAsync<PagedResult<TrashCommentItemDto>>("/api/admin/comments/trash");
+        Assert.NotNull(trashResp);
+        Assert.DoesNotContain(trashResp.Items, c => c.Id == comment.Id);
+
+        // Act 2 - Admin force deletes comment
+        var forceResp = await adminClient.DeleteAsync($"/api/admin/comments/{comment.Id}/force");
+        Assert.Equal(HttpStatusCode.NoContent, forceResp.StatusCode);
+
+        // Verify cannot be found anywhere
+        var restoreAgain = await adminClient.PostAsync($"/api/admin/comments/{comment.Id}/restore", null);
+        Assert.Equal(HttpStatusCode.NotFound, restoreAgain.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_CanModerateCommentStatus_RejectedAndSpam()
+    {
+        // Arrange
+        var post = await CreateTestPostAsync();
+        var anonClient = _factory.CreateAnonymousClient();
+        var adminClient = _factory.CreateAdminClient();
+
+        var createResp = await anonClient.PostAsJsonAsync($"/api/posts/{post.Id}/comments",
+            new CreateGuestCommentRequest("Suspicious comment", "spammer@example.com", "Spammer"));
+        var comment = await createResp.Content.ReadFromJsonAsync<CommentCreatedResponseDto>();
+        Assert.NotNull(comment);
+
+        // Act 1 - Mark as Spam
+        var spamResp = await adminClient.PatchAsJsonAsync($"/api/admin/comments/{comment.Id}/status",
+            new UpdateCommentStatusRequest(CommentStatus.Spam));
+        Assert.Equal(HttpStatusCode.OK, spamResp.StatusCode);
+
+        var feedAfterSpam = await anonClient.GetFromJsonAsync<List<CommentResponseDto>>($"/api/posts/{post.Id}/comments");
+        Assert.NotNull(feedAfterSpam);
+        Assert.DoesNotContain(feedAfterSpam, c => c.Id == comment.Id);
+
+        // Act 2 - Mark as Rejected
+        var rejectResp = await adminClient.PatchAsJsonAsync($"/api/admin/comments/{comment.Id}/status",
+            new UpdateCommentStatusRequest(CommentStatus.Rejected));
+        Assert.Equal(HttpStatusCode.OK, rejectResp.StatusCode);
+
+        var feedAfterReject = await anonClient.GetFromJsonAsync<List<CommentResponseDto>>($"/api/posts/{post.Id}/comments");
+        Assert.NotNull(feedAfterReject);
+        Assert.DoesNotContain(feedAfterReject, c => c.Id == comment.Id);
+    }
+
+    [Fact]
+    public async Task SuspendedOrBannedUser_CannotPostGuestComment()
+    {
+        // Arrange
+        var adminClient = _factory.CreateAdminClient();
+        var anonClient = _factory.CreateAnonymousClient();
+        var post = await CreateTestPostAsync();
+
+        var bannedEmail = $"banned_commenter_{Guid.NewGuid().ToString()[..6]}@example.com";
+        var userCreate = await adminClient.PostAsJsonAsync("/api/admin/users",
+            new deblog.Server.Features.Users.AdminCreateUserRequest(bannedEmail, $"banned_{Guid.NewGuid().ToString()[..6]}", "Banned Guy", null, null, deblog.Server.Features.Users.UserRoles.User, deblog.Server.Features.Users.UserStatus.Banned));
+        Assert.Equal(HttpStatusCode.Created, userCreate.StatusCode);
+
+        // Act - Guest attempts to comment with banned email
+        var commentResp = await anonClient.PostAsJsonAsync($"/api/posts/{post.Id}/comments",
+            new CreateGuestCommentRequest("Trying to troll", bannedEmail, "Troll"));
+
+        // Assert - 403 Forbidden
+        Assert.Equal(HttpStatusCode.Forbidden, commentResp.StatusCode);
+    }
 }

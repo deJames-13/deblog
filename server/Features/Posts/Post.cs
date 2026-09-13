@@ -20,6 +20,11 @@ public class Post : BaseEntity
     [NotMapped]
     public bool IsPublished => Status == PostStatus.Published;
 
+    public string? CoverImageUrl { get; set; }
+    public string? Category { get; set; }
+    public string[] Tags { get; set; } = [];
+    public bool IsFeatured { get; set; } = false;
+
     public Guid AuthorId { get; set; }
     public User Author { get; set; } = null!;
 

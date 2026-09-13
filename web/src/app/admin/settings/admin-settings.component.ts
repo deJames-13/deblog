@@ -12,6 +12,7 @@ import { BlogService } from '../../core/services/blog.service';
 import { SiteProfile } from '../../core/models/blog.model';
 import { INITIAL_PROFILE } from '../../core/data/mock-data';
 import { ImageCropModalComponent } from '../image-crop-modal/image-crop-modal.component';
+import { ConfirmDialogService } from '../../common/confirm-modal/confirm-modal.service';
 
 @Component({
   selector: 'app-admin-settings',
@@ -29,6 +30,7 @@ import { ImageCropModalComponent } from '../image-crop-modal/image-crop-modal.co
 })
 export class AdminSettingsComponent {
   private readonly blogService = inject(BlogService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly profile = this.blogService.profile;
 
@@ -53,8 +55,16 @@ export class AdminSettingsComponent {
     this.blogService.updateProfile(this.formData());
   }
 
-  handleReset(): void {
-    if (window.confirm('Reset profile to factory default settings?')) {
+  async handleReset(): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'RESTORE_FACTORY_DEFAULTS',
+      message: 'Are you sure you want to reset profile to factory default settings?',
+      details: 'All customized profile fields will revert to default BIOS values.',
+      confirmText: 'RESET PROFILE',
+      cancelText: 'CANCEL',
+      tone: 'warning',
+    });
+    if (confirmed) {
       this.formData.set({ ...INITIAL_PROFILE });
       this.blogService.updateProfile(INITIAL_PROFILE);
     }

@@ -18,20 +18,48 @@ public static class AuthenticationExtensions
 
         var key = Encoding.UTF8.GetBytes(jwtSecret);
 
+        var supabaseUrl = configuration["SUPABASE_URL"];
+        if (string.IsNullOrWhiteSpace(supabaseUrl))
+        {
+            var dbConn = configuration["DB_CONNECTION"] ?? string.Empty;
+            var match = System.Text.RegularExpressions.Regex.Match(dbConn, @"Username=postgres\.([a-zA-Z0-9]+)");
+            if (match.Success)
+            {
+                supabaseUrl = $"https://{match.Groups[1].Value}.supabase.co";
+            }
+        }
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
                 options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
+
+                if (!string.IsNullOrWhiteSpace(supabaseUrl))
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(1)
-                };
+                    options.Authority = $"{supabaseUrl.TrimEnd('/')}/auth/v1";
+                    options.MetadataAddress = $"{supabaseUrl.TrimEnd('/')}/auth/v1/.well-known/openid-configuration";
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+                }
+                else
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+                }
             });
 
         services.AddAuthorization(options =>

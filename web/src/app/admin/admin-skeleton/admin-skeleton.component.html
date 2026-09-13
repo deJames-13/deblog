@@ -1,0 +1,106 @@
+<div
+  id="admin-skeleton-view"
+  class="font-mono-bios w-full flex flex-col lg:flex-row gap-4 items-start animate-pulse"
+  role="status"
+  aria-busy="true"
+  aria-live="polite"
+  aria-label="Validating administrator credentials and initializing dashboard"
+>
+  <!-- Desktop Admin Sidebar Skeleton (Hidden on mobile/tablet, matching admin layout) -->
+  <aside class="hidden lg:flex flex-col gap-3 w-56 xl:w-64 shrink-0" aria-hidden="true">
+    <!-- Identity Card Skeleton -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 space-y-2 shadow-xs">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] shrink-0"></div>
+        <div class="space-y-1.5 flex-1 min-w-0">
+          <div class="h-3 w-28 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+          <div class="h-2.5 w-16 bg-[var(--accent-fkey)]/10 border border-[var(--accent-fkey)]/30"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation List Skeleton -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-2 shadow-xs space-y-1">
+      <div class="h-2.5 w-20 bg-[var(--bg-canvas)] mb-2"></div>
+      <div class="h-7 w-full bg-[var(--accent-terminal)]/15 border border-[var(--accent-terminal)]/40"></div>
+      <div class="h-7 w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+      <div class="h-7 w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+      <div class="h-7 w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+      <div class="h-7 w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+      <div class="h-7 w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+    </div>
+
+    <!-- Telemetry Box Skeleton -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-2.5 shadow-xs space-y-2">
+      <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      <div class="grid grid-cols-2 gap-1.5">
+        <div class="h-10 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-10 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-8 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] col-span-2"></div>
+      </div>
+    </div>
+
+    <!-- Actions Skeleton -->
+    <div class="space-y-1.5">
+      <div class="h-8 w-full bg-[var(--bg-surface)] border border-[var(--border-color)]"></div>
+      <div class="h-8 w-full bg-[var(--bg-surface)] border border-[var(--border-color)]"></div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport Skeleton -->
+  <section class="flex-1 w-full min-w-0 space-y-4">
+    <!-- Security Banner Skeleton -->
+    <div class="p-3 border border-[var(--accent-terminal)]/40 bg-[var(--accent-terminal)]/5 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-[var(--accent-terminal)] text-xs">
+        <span class="inline-block w-2 h-2 rounded-full bg-[var(--accent-terminal)] animate-ping"></span>
+        <span class="font-bold tracking-wider">[SYS-AUTH: VERIFYING CRYPTOGRAPHIC TOKEN...]</span>
+      </div>
+      <span class="text-[10px] text-[var(--text-dim)]">BIOS PROTOCOL v2.2</span>
+    </div>
+
+    <!-- Primary KPI Grid Skeleton -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 h-24 flex flex-col justify-between shadow-xs">
+        <div class="h-2.5 w-14 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-6 w-12 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      </div>
+
+      <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 h-24 flex flex-col justify-between shadow-xs">
+        <div class="h-2.5 w-14 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-6 w-12 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      </div>
+
+      <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 h-24 flex flex-col justify-between shadow-xs">
+        <div class="h-2.5 w-14 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-6 w-12 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      </div>
+
+      <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 h-24 flex flex-col justify-between shadow-xs">
+        <div class="h-2.5 w-14 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-6 w-12 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      </div>
+    </div>
+
+    <!-- Telemetry Chart Skeleton -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 space-y-3 shadow-xs">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
+        <div class="h-3 w-40 bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"></div>
+        <div class="h-2.5 w-24 bg-[var(--bg-canvas)]"></div>
+      </div>
+
+      <div class="h-32 flex items-end justify-between gap-2 pt-4 px-2">
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-2/5"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-3/5"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-4/5"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-2/3"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-1/2"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-3/4"></div>
+        <div class="flex-1 bg-[var(--accent-terminal)]/20 border-t-2 border-[var(--accent-terminal)]/40 h-5/6"></div>
+      </div>
+    </div>
+  </section>
+</div>

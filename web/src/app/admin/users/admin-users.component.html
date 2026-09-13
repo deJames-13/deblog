@@ -125,7 +125,8 @@
                       type="button"
                       (click)="toggleStatus(user.id)"
                       class="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--text-primary)] text-[10px] cursor-pointer"
-                      [title]="user.status === 'active' ? 'Ban User' : 'Unban User'"
+                      [appTooltip]="user.status === 'active' ? 'Suspend / Ban user account' : 'Reactivate user account'"
+                      tooltipPosition="top"
                     >
                       @if (user.status === 'active') {
                         <span class="text-[var(--accent-fkey)]">BAN</span>
@@ -138,7 +139,8 @@
                       type="button"
                       (click)="deleteUser(user.id, user.name)"
                       class="p-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-fkey)] text-[var(--text-dim)] hover:text-[var(--accent-fkey)] cursor-pointer"
-                      title="Delete User Record"
+                      appTooltip="Permanently delete user record"
+                      tooltipPosition="top"
                       aria-label="Delete User Record"
                     >
                       <svg lucideTrash2 class="w-3.5 h-3.5"></svg>

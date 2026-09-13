@@ -18,7 +18,6 @@ public static class UpdatePostEndpoint
             var post = await db.Posts
                 .Include(p => p.Author)
                 .Include(p => p.Analytics)
-                .Include(p => p.Comments)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted, ct);
 
             if (post == null)
@@ -49,6 +48,26 @@ public static class UpdatePostEndpoint
             if (!string.IsNullOrWhiteSpace(request.Content))
             {
                 post.Content = request.Content;
+            }
+
+            if (request.CoverImageUrl != null)
+            {
+                post.CoverImageUrl = request.CoverImageUrl.Trim();
+            }
+
+            if (request.Category != null)
+            {
+                post.Category = request.Category.Trim();
+            }
+
+            if (request.Tags != null)
+            {
+                post.Tags = request.Tags;
+            }
+
+            if (request.IsFeatured.HasValue)
+            {
+                post.IsFeatured = request.IsFeatured.Value;
             }
 
             if (request.Status.HasValue)

@@ -31,6 +31,12 @@
       "skillPath": "skills/tailwind-file-first-vsa/SKILL.md",
       "computedHash": "3de37c854a2c77bed5e6e9a1061345653e3bc9c203f0ce76261a75e6915d05ba"
     },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "e753a5da75292bbe59d302d89566bc2c53d0e73944da2f0e944a7578883c07d0"
+    },
     "vertical-slice-architect": {
       "source": "deJames-13/skills",
       "sourceType": "github",

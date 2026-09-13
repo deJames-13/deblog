@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import {
   LucideCpu,
   LucidePalette,
-  LucideShield,
   LucideTerminal,
   LucideType,
   LucideX,
@@ -20,7 +19,6 @@ import { BlogService } from '../../core/services/blog.service';
     LucideCpu,
     LucidePalette,
     LucideType,
-    LucideShield,
   ],
   templateUrl: './help-modal.component.html',
 })
@@ -37,7 +35,6 @@ export class HelpModalComponent {
     { key: 'F5', desc: 'Return to Landing Index and clear search filters' },
     { key: 'F6', desc: 'Cycle Alternate Reading Font (Roboto, Alice, Noto, etc.)' },
     { key: 'F7', desc: 'Filter Top Articles by reader likes and engagement' },
-    { key: 'F8', desc: 'Switch to Admin Management Console (Authentication Gate)' },
     { key: 'ESC', desc: 'Exit Zen Mode, close modals, or return to index' },
   ];
 
