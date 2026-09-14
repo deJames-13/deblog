@@ -3,11 +3,13 @@ using deblog.Server.Common.Middleware;
 using deblog.Server.Common.Services;
 using deblog.Server.Features.Analytics;
 using deblog.Server.Features.Comments;
+using deblog.Server.Features.Emails;
 using deblog.Server.Features.Media;
 using deblog.Server.Features.Posts;
 using deblog.Server.Features.Settings;
 using deblog.Server.Features.Users;
 using DotNetEnv;
+using Resend;
 
 // 1. Load environment variables from .env
 Env.TraversePath().Load();
@@ -39,10 +41,18 @@ builder.Services.AddDatabase(builder.Configuration);
 // 4. Supabase Auth & JWT Bearer with AdminOnly policy
 builder.Services.AddSupabaseAuthentication(builder.Configuration);
 
-// 5. In-Memory Cache & Analytics Tracker & Cloudinary
+// 5. In-Memory Cache & Analytics Tracker & Cloudinary & Resend Email
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAnalyticsTracker, MemoryAnalyticsTracker>();
 builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
+var resendApiKey = builder.Configuration["RESEND_API_KEY"]?.Trim();
+if (!string.IsNullOrWhiteSpace(resendApiKey) && !resendApiKey.StartsWith("re_placeholder", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddResend(options => options.ApiToken = resendApiKey);
+}
+builder.Services.AddSingleton<IEmailService, ResendEmailService>();
+
 builder.Services.AddScoped<IDataReconciliationService, DataReconciliationService>();
 builder.Services.AddHostedService<DataSyncBackgroundService>();
 
@@ -144,6 +154,7 @@ app.MapCommentEndpoints();
 app.MapMediaEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapSettingsEndpoints();
+app.MapEmailEndpoints();
 
 app.Run();
 
