@@ -23,6 +23,41 @@ namespace server.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("deblog.Server.Features.Analytics.DailyTelemetry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CommentsCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LikesCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SharesCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ViewsCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.ToTable("daily_telemetry", "deblog");
+                });
+
             modelBuilder.Entity("deblog.Server.Features.Comments.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -78,6 +113,64 @@ namespace server.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("Comments", "deblog");
+                });
+
+            modelBuilder.Entity("deblog.Server.Features.Media.MediaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AltText")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Filename")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("SecureUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UploadedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("media_items", "deblog");
                 });
 
             modelBuilder.Entity("deblog.Server.Features.Posts.Post", b =>
@@ -257,6 +350,52 @@ namespace server.Migrations
                     b.ToTable("Users", "deblog");
                 });
 
+            modelBuilder.Entity("deblog.Server.Features.Users.UserInformation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BannerUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("CopyrightYear")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("SocialLinksJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Tagline")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("user_information", "deblog");
+                });
+
             modelBuilder.Entity("deblog.Server.Features.Comments.Comment", b =>
                 {
                     b.HasOne("deblog.Server.Features.Users.User", "Author")
@@ -274,6 +413,16 @@ namespace server.Migrations
                     b.Navigation("Author");
 
                     b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("deblog.Server.Features.Media.MediaItem", b =>
+                {
+                    b.HasOne("deblog.Server.Features.Users.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("UploadedBy");
                 });
 
             modelBuilder.Entity("deblog.Server.Features.Posts.Post", b =>
@@ -298,6 +447,17 @@ namespace server.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("deblog.Server.Features.Users.UserInformation", b =>
+                {
+                    b.HasOne("deblog.Server.Features.Users.User", "User")
+                        .WithOne("Information")
+                        .HasForeignKey("deblog.Server.Features.Users.UserInformation", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("deblog.Server.Features.Posts.Post", b =>
                 {
                     b.Navigation("Analytics");
@@ -308,6 +468,8 @@ namespace server.Migrations
             modelBuilder.Entity("deblog.Server.Features.Users.User", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Information");
 
                     b.Navigation("Posts");
                 });

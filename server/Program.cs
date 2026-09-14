@@ -1,16 +1,37 @@
 using deblog.Server.Common.Extensions;
 using deblog.Server.Common.Middleware;
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Common.Services;
+using deblog.Server.Features.Analytics;
+using deblog.Server.Features.Auth;
 using deblog.Server.Features.Comments;
+using deblog.Server.Features.Emails;
+using deblog.Server.Features.Media;
 using deblog.Server.Features.Posts;
+using deblog.Server.Features.Settings;
 using deblog.Server.Features.Users;
 using DotNetEnv;
+using Resend;
 
 // 1. Load environment variables from .env
 Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
+
+// Sentry Integration
+var sentryDsn = builder.Configuration["SENTRY_DSN"]?.Trim();
+if (!string.IsNullOrWhiteSpace(sentryDsn) && !sentryDsn.StartsWith("placeholder", StringComparison.OrdinalIgnoreCase))
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+        options.TracesSampleRate = 1.0;
+        options.SendDefaultPii = false;
+        options.AttachStacktrace = true;
+        options.Environment = builder.Environment.EnvironmentName;
+    });
+}
 
 // 2. Exception Handling, Problem Details & JSON Options
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -36,11 +57,23 @@ builder.Services.AddDatabase(builder.Configuration);
 // 4. Supabase Auth & JWT Bearer with AdminOnly policy
 builder.Services.AddSupabaseAuthentication(builder.Configuration);
 
-// 5. In-Memory Cache & Analytics Tracker
+// 5. In-Memory Cache & Analytics Tracker & Cloudinary & Resend Email
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAnalyticsTracker, MemoryAnalyticsTracker>();
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+
+var resendApiKey = builder.Configuration["RESEND_API_KEY"]?.Trim();
+if (!string.IsNullOrWhiteSpace(resendApiKey) && !resendApiKey.StartsWith("re_placeholder", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddResend(options => options.ApiToken = resendApiKey);
+}
+builder.Services.AddSingleton<IEmailService, ResendEmailService>();
+
 builder.Services.AddScoped<IDataReconciliationService, DataReconciliationService>();
 builder.Services.AddHostedService<DataSyncBackgroundService>();
+
+builder.Services.AddHttpClient();
+builder.Services.AddDeblogRateLimiting(builder.Configuration);
 
 // 6. Swagger / OpenAPI with JWT Bearer support
 builder.Services.AddConfiguredSwagger();
@@ -113,6 +146,7 @@ if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("ENA
 }
 
 app.UseCors("DeblogCorsPolicy");
+app.UseRateLimiter();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -134,9 +168,14 @@ app.MapGet("/", () => Results.Ok(new
 .WithName("HealthCheck");
 
 // 11. Feature Vertical Slices
+app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapPostEndpoints();
 app.MapCommentEndpoints();
+app.MapMediaEndpoints();
+app.MapAnalyticsEndpoints();
+app.MapSettingsEndpoints();
+app.MapEmailEndpoints();
 
 app.Run();
 

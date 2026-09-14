@@ -1,5 +1,7 @@
 using deblog.Server.Common.Entities;
+using deblog.Server.Features.Analytics;
 using deblog.Server.Features.Comments;
+using deblog.Server.Features.Media;
 using deblog.Server.Features.Posts;
 using deblog.Server.Features.Users;
 using Microsoft.EntityFrameworkCore;
@@ -18,9 +20,12 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserInformation> UserInformations => Set<UserInformation>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<PostAnalytics> PostAnalytics => Set<PostAnalytics>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<MediaItem> MediaItems => Set<MediaItem>();
+    public DbSet<DailyTelemetry> DailyTelemetries => Set<DailyTelemetry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -103,6 +108,50 @@ public class AppDbContext : DbContext
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // UserInformation configuration (1-to-1 with User)
+        modelBuilder.Entity<UserInformation>(builder =>
+        {
+            builder.ToTable("user_information");
+            builder.HasKey(ui => ui.Id);
+            builder.HasIndex(ui => ui.UserId).IsUnique();
+            builder.Property(ui => ui.JobTitle).HasMaxLength(128);
+            builder.Property(ui => ui.Tagline).HasMaxLength(256);
+            builder.Property(ui => ui.Location).HasMaxLength(128);
+            builder.Property(ui => ui.BannerUrl).HasMaxLength(512);
+            builder.Property(ui => ui.CopyrightYear).HasMaxLength(16);
+
+            builder.HasOne(ui => ui.User)
+                .WithOne(u => u.Information)
+                .HasForeignKey<UserInformation>(ui => ui.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // MediaItem configuration
+        modelBuilder.Entity<MediaItem>(builder =>
+        {
+            builder.ToTable("media_items");
+            builder.HasKey(m => m.Id);
+            builder.HasIndex(m => m.PublicId).IsUnique();
+            builder.Property(m => m.PublicId).HasMaxLength(256).IsRequired();
+            builder.Property(m => m.SecureUrl).HasMaxLength(1024).IsRequired();
+            builder.Property(m => m.Filename).HasMaxLength(256).IsRequired();
+            builder.Property(m => m.MimeType).HasMaxLength(64).IsRequired();
+            builder.Property(m => m.AltText).HasMaxLength(256);
+
+            builder.HasOne(m => m.UploadedBy)
+                .WithMany()
+                .HasForeignKey(m => m.UploadedById)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // DailyTelemetry configuration
+        modelBuilder.Entity<DailyTelemetry>(builder =>
+        {
+            builder.ToTable("daily_telemetry");
+            builder.HasKey(dt => dt.Id);
+            builder.HasIndex(dt => dt.Date).IsUnique();
         });
     }
 

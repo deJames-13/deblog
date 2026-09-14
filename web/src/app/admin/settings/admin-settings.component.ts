@@ -1,8 +1,9 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideCrop,
   LucideImage,
+  LucideLoader,
   LucideRotateCcw,
   LucideSave,
   LucideShare2,
@@ -25,10 +26,11 @@ import { ConfirmDialogService } from '../../common/confirm-modal/confirm-modal.s
     LucideShare2,
     LucideImage,
     LucideCrop,
+    LucideLoader,
   ],
   templateUrl: './admin-settings.component.html',
 })
-export class AdminSettingsComponent {
+export class AdminSettingsComponent implements OnInit {
   private readonly blogService = inject(BlogService);
   private readonly confirmDialog = inject(ConfirmDialogService);
 
@@ -43,11 +45,17 @@ export class AdminSettingsComponent {
   readonly cropAspectRatio = signal<number>(1);
   readonly cropTitle = signal<string>('');
   readonly cropTargetField = signal<'avatar_url' | 'banner_url'>('avatar_url');
+  readonly isUploading = signal<boolean>(false);
+  readonly cloudinaryConfigured = this.blogService.cloudinaryConfigured;
 
   constructor() {
     effect(() => {
       this.formData.set({ ...this.profile() });
     });
+  }
+
+  ngOnInit(): void {
+    this.blogService.loadProfileFromBackend();
   }
 
   handleSave(e: Event): void {
@@ -127,17 +135,47 @@ export class AdminSettingsComponent {
     this.cropModalOpen.set(true);
   }
 
-  handleCropComplete(dataUrl: string): void {
+  async handleCropComplete(dataUrl: string): Promise<void> {
     const field = this.cropTargetField();
-    this.formData.update((prev) => ({
-      ...prev,
-      [field]: dataUrl,
-    }));
     this.cropModalOpen.set(false);
-    this.blogService.addToast(
-      `Updated ${field === 'avatar_url' ? 'Avatar' : 'Banner'} preview. Click Save to persist.`,
-      'info'
-    );
+
+    try {
+      this.isUploading.set(true);
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+
+      // Enforce 1MB file limit
+      if (blob.size > 1024 * 1024) {
+        this.blogService.addToast(
+          `Cropped image size (${(blob.size / 1024 / 1024).toFixed(2)}MB) exceeds 1MB limit. Please re-crop with lower resolution.`,
+          'error'
+        );
+        return;
+      }
+
+      let uploadedUrl: string | null = null;
+      if (field === 'avatar_url') {
+        uploadedUrl = await this.blogService.uploadAvatar(blob);
+      } else {
+        uploadedUrl = await this.blogService.uploadBanner(blob);
+      }
+
+      if (uploadedUrl) {
+        this.formData.update((prev) => ({
+          ...prev,
+          [field]: uploadedUrl,
+        }));
+        this.blogService.addToast(
+          `Updated ${field === 'avatar_url' ? 'Avatar' : 'Banner'} with Cloudinary CDN asset. Remember to click Save.`,
+          'info'
+        );
+      }
+    } catch (err) {
+      console.error('[AdminSettings] Image upload failed:', err);
+      this.blogService.addToast('Failed to upload image to CDN', 'error');
+    } finally {
+      this.isUploading.set(false);
+    }
   }
 
   closeCropModal(): void {

@@ -1,4 +1,5 @@
 using deblog.Server.Common.Data;
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Common.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,7 @@ public static class TrackPostAnalyticsEndpoint
             {
                 post.Analytics ??= new PostAnalytics { PostId = post.Id };
                 post.Analytics.Views++;
+                await IncrementDailyTelemetryAsync(db, views: 1, ct: ct);
                 await db.SaveChangesAsync(ct);
             }
 
@@ -48,13 +50,15 @@ public static class TrackPostAnalyticsEndpoint
             {
                 post.Analytics ??= new PostAnalytics { PostId = post.Id };
                 post.Analytics.Likes++;
+                await IncrementDailyTelemetryAsync(db, likes: 1, ct: ct);
                 await db.SaveChangesAsync(ct);
             }
 
             return Results.Ok(new { likes = post.Analytics?.Likes ?? 0 });
         })
         .WithName("TrackPostLike")
-        .WithSummary("Increment post like counter with visitor cooldown deduplication");
+        .WithSummary("Increment post like counter with visitor cooldown deduplication")
+        .RequireRateLimiting(RateLimitingPolicies.ReactionSpam);
 
         // POST /api/posts/{idOrSlug}/analytics/share
         group.MapPost("/{idOrSlug}/analytics/share", async (
@@ -72,15 +76,43 @@ public static class TrackPostAnalyticsEndpoint
             {
                 post.Analytics ??= new PostAnalytics { PostId = post.Id };
                 post.Analytics.Shares++;
+                await IncrementDailyTelemetryAsync(db, shares: 1, ct: ct);
                 await db.SaveChangesAsync(ct);
             }
 
             return Results.Ok(new { shares = post.Analytics?.Shares ?? 0 });
         })
         .WithName("TrackPostShare")
-        .WithSummary("Increment post share counter with visitor cooldown deduplication");
+        .WithSummary("Increment post share counter with visitor cooldown deduplication")
+        .RequireRateLimiting(RateLimitingPolicies.ReactionSpam);
 
         return group;
+    }
+
+    private static async Task IncrementDailyTelemetryAsync(
+        AppDbContext db,
+        int views = 0,
+        int likes = 0,
+        int shares = 0,
+        int comments = 0,
+        CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var telemetry = await db.DailyTelemetries.FirstOrDefaultAsync(t => t.Date == today, ct);
+        if (telemetry == null)
+        {
+            telemetry = new deblog.Server.Features.Analytics.DailyTelemetry
+            {
+                Id = Guid.NewGuid(),
+                Date = today
+            };
+            db.DailyTelemetries.Add(telemetry);
+        }
+
+        telemetry.ViewsCount += views;
+        telemetry.LikesCount += likes;
+        telemetry.SharesCount += shares;
+        telemetry.CommentsCount += comments;
     }
 
     private static async Task<Post?> ResolvePostWithAnalyticsAsync(string idOrSlug, AppDbContext db, CancellationToken ct)

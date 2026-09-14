@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using deblog.Server.Common.Data;
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Features.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -90,6 +91,21 @@ public static class CreateGuestCommentEndpoint
             };
 
             db.Comments.Add(comment);
+
+            // Increment daily telemetry comments count
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var telemetry = await db.DailyTelemetries.FirstOrDefaultAsync(t => t.Date == today, ct);
+            if (telemetry == null)
+            {
+                telemetry = new deblog.Server.Features.Analytics.DailyTelemetry
+                {
+                    Id = Guid.NewGuid(),
+                    Date = today
+                };
+                db.DailyTelemetries.Add(telemetry);
+            }
+            telemetry.CommentsCount++;
+
             await db.SaveChangesAsync(ct);
 
             var responseDto = new CommentCreatedResponseDto(
@@ -105,7 +121,8 @@ public static class CreateGuestCommentEndpoint
             return Results.Created($"/api/posts/{postId}/comments/{comment.Id}", responseDto);
         })
         .WithName("CreateGuestComment")
-        .WithSummary("Post a comment as a guest with email validation (returns management token for editing/removal)");
+        .WithSummary("Post a comment as a guest with email validation (returns management token for editing/removal)")
+        .RequireRateLimiting(RateLimitingPolicies.CommentSpam);
 
         return group;
     }

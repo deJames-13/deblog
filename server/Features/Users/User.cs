@@ -26,4 +26,5 @@ public class User : BaseEntity
 
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public UserInformation? Information { get; set; }
 }

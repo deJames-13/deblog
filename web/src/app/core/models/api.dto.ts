@@ -130,6 +130,15 @@ export interface UpdateCommentRequest {
   managementToken?: string;
 }
 
+export interface UserInformationDto {
+  jobTitle?: string | null;
+  tagline?: string | null;
+  location?: string | null;
+  bannerUrl?: string | null;
+  copyrightYear?: string | null;
+  socialLinksJson?: string | null;
+}
+
 export interface UserProfileDto {
   id: string;
   email: string;
@@ -142,12 +151,19 @@ export interface UserProfileDto {
   isDeleted: boolean;
   deletedAt?: string | null;
   createdAt: string;
+  information?: UserInformationDto | null;
 }
 
 export interface UpdateUserProfileRequest {
   displayName?: string;
   bio?: string;
   avatarUrl?: string;
+  jobTitle?: string;
+  tagline?: string;
+  location?: string;
+  bannerUrl?: string;
+  copyrightYear?: string;
+  socialLinksJson?: string;
 }
 
 export interface AdminCreateUserRequest {
@@ -169,3 +185,82 @@ export interface AdminUpdateUserRequest {
   role?: string;
   status?: number | string;
 }
+
+export interface MediaItemDto {
+  id: string;
+  publicId: string;
+  url: string;
+  filename: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  fileSizeKb: number;
+  width: number;
+  height: number;
+  dimensions: string;
+  altText?: string | null;
+  createdAt: string;
+}
+
+export interface UploadMediaResponseDto {
+  media: MediaItemDto;
+  message: string;
+}
+
+export interface MediaStatusDto {
+  configured: boolean;
+  status: 'online' | 'offline';
+  maxFileSizeKb: number;
+  allowedTypes: string[];
+}
+
+export interface DailyTelemetryDto {
+  day: string;
+  date: string;
+  views: number;
+  likes: number;
+  shares: number;
+  comments: number;
+}
+
+export interface TelemetrySummaryDto {
+  days: DailyTelemetryDto[];
+  totalViews7Days: number;
+  peakViews: number;
+  totalComments7Days: number;
+  totalLikes7Days: number;
+}
+
+export interface SiteSettingsDto {
+  userId: string;
+  email: string;
+  username: string;
+  displayName: string;
+  role?: string;
+  tagline?: string;
+  bio?: string;
+  location?: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  copyrightYear?: string;
+  socialLinksJson?: string;
+  cloudinaryConfigured: boolean;
+}
+
+export interface UpdateSiteSettingsRequestDto {
+  displayName?: string;
+  role?: string;
+  tagline?: string;
+  bio?: string;
+  location?: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  copyrightYear?: string;
+  socialLinksJson?: string;
+}
+
+export interface UploadSettingAssetResponseDto {
+  url: string;
+  publicId: string;
+  message: string;
+}
+

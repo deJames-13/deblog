@@ -59,7 +59,9 @@ public static class DatabaseExtensions
         }
 
         var normalizedEmail = adminEmail.Trim().ToLowerInvariant();
-        var existingUser = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+        var existingUser = await db.Users
+            .Include(u => u.Information)
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
         if (existingUser == null)
         {
@@ -72,7 +74,6 @@ public static class DatabaseExtensions
                 ? parsedId
                 : Guid.NewGuid();
 
-
             var adminUser = new User
             {
                 Id = adminId,
@@ -81,18 +82,57 @@ public static class DatabaseExtensions
                 DisplayName = displayName,
                 Bio = bio,
                 AvatarUrl = avatarUrl,
-                Role = UserRoles.Admin
+                Role = UserRoles.Admin,
+                Information = new UserInformation
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = adminId,
+                    JobTitle = "Power Platform Developer | Full Stack Developer",
+                    Tagline = "Engineering enterprise automations, clean full-stack backends, and low-latency minimalist interfaces.",
+                    Location = "Manila, Philippines / Remote",
+                    BannerUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+                    CopyrightYear = "2026",
+                    SocialLinksJson = "{\"github\":\"https://github.com/deJames-13\",\"facebook\":\"https://facebook.com/the2ndpercyfied\",\"linkedin\":\"https://linkedin.com/in/derickjamesespinosa\",\"instagram\":\"https://instagram.com/_doftenfools\"}"
+                }
             };
 
             db.Users.Add(adminUser);
             await db.SaveChangesAsync();
-            logger.LogInformation("Successfully seeded main author profile: {Email} ({Username}) with Role: Admin", normalizedEmail, username);
+            logger.LogInformation("Successfully seeded main author profile: {Email} ({Username}) with Role: Admin and UserInformation", normalizedEmail, username);
         }
-        else if (existingUser.Role != UserRoles.Admin)
+        else
         {
-            existingUser.Role = UserRoles.Admin;
-            await db.SaveChangesAsync();
-            logger.LogInformation("Updated existing user {Email} role to Admin.", normalizedEmail);
+            var modified = false;
+            if (existingUser.Role != UserRoles.Admin)
+            {
+                existingUser.Role = UserRoles.Admin;
+                modified = true;
+                logger.LogInformation("Updated existing user {Email} role to Admin.", normalizedEmail);
+            }
+
+            if (existingUser.Information == null)
+            {
+                var newInfo = new UserInformation
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = existingUser.Id,
+                    JobTitle = "Power Platform Developer | Full Stack Developer",
+                    Tagline = "Engineering enterprise automations, clean full-stack backends, and low-latency minimalist interfaces.",
+                    Location = "Manila, Philippines / Remote",
+                    BannerUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+                    CopyrightYear = "2026",
+                    SocialLinksJson = "{\"github\":\"https://github.com/deJames-13\",\"facebook\":\"https://facebook.com/the2ndpercyfied\",\"linkedin\":\"https://linkedin.com/in/derickjamesespinosa\",\"instagram\":\"https://instagram.com/_doftenfools\"}"
+                };
+                db.UserInformations.Add(newInfo);
+                existingUser.Information = newInfo;
+                modified = true;
+                logger.LogInformation("Seeded default UserInformation for existing author: {Email}.", normalizedEmail);
+            }
+
+            if (modified)
+            {
+                await db.SaveChangesAsync();
+            }
         }
     }
 }

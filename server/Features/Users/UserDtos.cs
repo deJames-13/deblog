@@ -2,6 +2,15 @@ using System.Text.Json.Serialization;
 
 namespace deblog.Server.Features.Users;
 
+public record UserInformationDto(
+    string? JobTitle,
+    string? Tagline,
+    string? Location,
+    string? BannerUrl,
+    string? CopyrightYear,
+    string? SocialLinksJson
+);
+
 [method: JsonConstructor]
 public record UserProfileDto(
     Guid Id,
@@ -14,7 +23,8 @@ public record UserProfileDto(
     UserStatus Status,
     bool IsDeleted,
     DateTime? DeletedAt,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    UserInformationDto? Information = null
 )
 {
     // Convenience constructor for backward compatibility with 8 arguments
@@ -27,7 +37,7 @@ public record UserProfileDto(
         string? avatarUrl,
         string role,
         DateTime createdAt)
-        : this(id, email, username, displayName, bio, avatarUrl, role, UserStatus.Active, false, null, createdAt)
+        : this(id, email, username, displayName, bio, avatarUrl, role, UserStatus.Active, false, null, createdAt, null)
     {
     }
 }
@@ -46,7 +56,13 @@ public record TrashUserItemDto(
 public record UpdateUserProfileRequest(
     string? DisplayName,
     string? Bio,
-    string? AvatarUrl
+    string? AvatarUrl,
+    string? JobTitle = null,
+    string? Tagline = null,
+    string? Location = null,
+    string? BannerUrl = null,
+    string? CopyrightYear = null,
+    string? SocialLinksJson = null
 );
 
 [method: JsonConstructor]

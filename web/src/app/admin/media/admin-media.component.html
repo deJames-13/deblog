@@ -1,32 +1,73 @@
 <div id="admin-media-view" class="space-y-4 font-mono-bios text-xs">
   <!-- Header -->
   <div class="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-    <div>
+    <div class="flex items-center gap-2">
       <h2 class="text-sm font-bold tracking-wider uppercase text-[var(--text-primary)]">
         MEDIA ASSETS
       </h2>
+      <!-- Status Badge -->
+      @if (isOffline()) {
+        <span class="px-1.5 py-0.5 bg-[var(--accent-orange)] text-[var(--accent-orange-contrast)] text-[9px] font-bold uppercase">
+          STORAGE: OFFLINE
+        </span>
+      } @else {
+        <span class="px-1.5 py-0.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] text-[9px] font-bold uppercase">
+          CLOUDINARY: ONLINE
+        </span>
+      }
     </div>
 
     <div class="flex items-center gap-3 text-[11px]">
       <span class="text-[var(--text-dim)]">
-        OPTIMIZED: <strong class="text-[var(--accent-terminal)] font-mono">-{{ spaceSavedPct() }}% WebP</strong>
+        LIMIT: <strong class="text-[var(--text-primary)] font-mono">1MB / ASSET</strong>
       </span>
       <span>•</span>
       <span class="text-[var(--text-dim)]">
-        TOTAL: <strong class="text-[var(--text-primary)] font-mono">{{ media().length }}</strong>
+        TOTAL: <strong class="text-[var(--accent-terminal)] font-mono">{{ totalFilesCount() }}</strong>
       </span>
+      <button
+        type="button"
+        (click)="refreshMedia()"
+        title="Refresh media"
+        class="p-1 hover:text-[var(--accent-terminal)] text-[var(--text-dim)] cursor-pointer transition-colors"
+      >
+        <svg lucideRefreshCw class="w-3.5 h-3.5" [class.animate-spin]="isMediaLoading()"></svg>
+      </button>
     </div>
   </div>
 
-  <!-- Drag-and-Drop / Upload Area -->
-  <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-    <!-- Dropzone (8 cols) -->
+  <!-- Offline / Degraded State Warning Banner -->
+  @if (isOffline()) {
+    <div class="p-3 border border-[var(--accent-orange)] bg-[var(--accent-orange)]/10 flex items-start gap-2.5 text-xs text-[var(--text-primary)]">
+      <svg lucideAlertTriangle class="w-4 h-4 text-[var(--accent-orange)] shrink-0 mt-0.5"></svg>
+      <div class="space-y-1">
+        <div class="font-bold text-[var(--accent-orange)] uppercase tracking-wider">
+          CLOUDINARY MEDIA PIPELINE OFFLINE
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)]">
+          The server is running without Cloudinary API credentials (<code class="text-[var(--text-primary)]">CLOUDINARY_CLOUD_NAME</code>, <code class="text-[var(--text-primary)]">CLOUDINARY_API_KEY</code>, <code class="text-[var(--text-primary)]">CLOUDINARY_API_SECRET</code>). New image uploads will be rejected until credentials are configured in <code class="text-[var(--text-primary)]">server/.env</code>.
+        </p>
+      </div>
+    </div>
+  }
+
+  <!-- Ingest Area -->
+  <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 space-y-3">
+    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
+      <div class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--text-primary)] text-xs">
+        <svg lucideUploadCloud class="w-4 h-4 text-[var(--accent-terminal)]"></svg>
+        <span>IMAGE ASSET INGESTION</span>
+      </div>
+      <span class="text-[10px] text-[var(--text-dim)]">STANDARD: WEBP AUTO-TRANSCODE</span>
+    </div>
+
     <div
-      class="md:col-span-7 border-2 border-dashed p-6 text-center transition-colors cursor-pointer flex flex-col items-center justify-center gap-2"
+      class="border-2 border-dashed p-6 text-center transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 relative"
       [class.border-[var(--accent-terminal)]]="isDragging()"
       [class.bg-[var(--accent-terminal)]/5]="isDragging()"
       [class.border-[var(--border-color)]]="!isDragging()"
-      [class.bg-[var(--bg-surface)]]="!isDragging()"
+      [class.bg-[var(--bg-canvas)]]="!isDragging()"
+      [class.opacity-60]="isUploading()"
       (dragover)="$event.preventDefault(); isDragging.set(true)"
       (dragleave)="isDragging.set(false)"
       (drop)="handleFileDrop($event)"
@@ -35,69 +76,34 @@
       <input
         #fileUploadInput
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/avif"
         class="hidden"
         (change)="handleFileInputChange($event)"
       />
-      <div class="p-2 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--accent-terminal)]">
-        <svg lucideUploadCloud class="w-6 h-6"></svg>
+
+      <div class="p-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--accent-terminal)]">
+        @if (isUploading()) {
+          <svg lucideRefreshCw class="w-6 h-6 animate-spin"></svg>
+        } @else {
+          <svg lucideUploadCloud class="w-6 h-6"></svg>
+        }
       </div>
+
       <div class="font-bold text-xs text-[var(--text-primary)] uppercase tracking-wider">
-        DRAG & DROP IMAGE FILE HERE
+        @if (isUploading()) {
+          UPLOADING & TRANSCODING TO CLOUDINARY...
+        } @else {
+          DRAG & DROP IMAGE FILE HERE, OR CLICK TO BROWSE
+        }
       </div>
-      <p class="text-[11px] text-[var(--text-dim)] max-w-xs">
-        Automated conversion to high-efficiency WebP with lossless compression upon ingest.
+
+      <p class="text-[11px] text-[var(--text-dim)] max-w-md">
+        Strict limit: <strong>1MB maximum</strong>. Accepted formats: JPEG, PNG, WebP, AVIF. Automatically resized and optimized on CDN.
       </p>
     </div>
-
-    <!-- Direct URL Upload Box (5 cols) -->
-    <form
-      (submit)="handleManualUpload($event)"
-      class="md:col-span-5 border border-[var(--border-color)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2.5"
-    >
-      <div class="space-y-2">
-        <div class="font-bold uppercase tracking-wider text-[11px] text-[var(--text-primary)]">
-          INGEST FROM URL
-        </div>
-
-        <div>
-          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
-            Resource URL
-          </label>
-          <input
-            type="url"
-            required
-            placeholder="https://..."
-            [value]="customUrl()"
-            (input)="customUrl.set($any($event.target).value)"
-            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
-          />
-        </div>
-
-        <div>
-          <label class="block text-[10px] uppercase text-[var(--text-dim)] mb-1">
-            Asset Label / Name (Optional)
-          </label>
-          <input
-            type="text"
-            placeholder="e.g. system-architecture-v2.webp"
-            [value]="customName()"
-            (input)="customName.set($any($event.target).value)"
-            class="w-full bg-[var(--bg-canvas)] border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-terminal)]"
-          />
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        class="w-full py-1.5 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold uppercase tracking-wider text-[11px] cursor-pointer hover:opacity-90 transition-opacity"
-      >
-        Ingest Asset
-      </button>
-    </form>
   </div>
 
-  <!-- Search Filter -->
+  <!-- Search Filter & Status Summary -->
   <div class="p-2.5 bg-[var(--bg-surface)] border border-[var(--border-color)] flex items-center justify-between gap-2">
     <div class="relative w-full sm:w-72">
       <svg lucideSearch class="w-3.5 h-3.5 absolute left-2 top-2 text-[var(--text-dim)] pointer-events-none"></svg>
@@ -106,21 +112,60 @@
         placeholder="Filter assets by filename or alt..."
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)"
-        class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-2 py-1 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)]"
+        class="w-full bg-[var(--bg-canvas)] text-[var(--text-primary)] pl-7 pr-2 py-1 text-xs border border-[var(--border-color)] focus:outline-none focus:border-[var(--accent-terminal)] font-mono"
       />
     </div>
 
-    <span class="text-[10px] text-[var(--text-dim)] hidden sm:inline">
+    <span class="text-[10px] text-[var(--text-dim)] hidden sm:inline font-mono">
       SHOWING {{ filteredMedia().length }} OF {{ media().length }} ASSETS
     </span>
   </div>
 
-  <!-- Media Grid -->
-  @if (filteredMedia().length === 0) {
-    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center text-[var(--text-dim)]">
-      No media assets match your query.
+  <!-- Mandatory 5 States Grid Container -->
+  @if (isMediaLoading() && media().length === 0) {
+    <!-- Loading State: Skeletons -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      @for (n of [1, 2, 3, 4]; track n) {
+        <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] flex flex-col justify-between overflow-hidden animate-pulse">
+          <div class="h-36 bg-[var(--bg-canvas)]"></div>
+          <div class="p-2.5 space-y-2">
+            <div class="h-3 bg-[var(--border-subtle)] w-3/4"></div>
+            <div class="h-2.5 bg-[var(--border-subtle)] w-1/2"></div>
+            <div class="h-6 bg-[var(--border-subtle)] w-full mt-2"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (filteredMedia().length === 0) {
+    <!-- Empty State -->
+    <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center space-y-3">
+      <div class="inline-flex p-3 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-dim)]">
+        <svg lucideHardDrive class="w-6 h-6"></svg>
+      </div>
+      <div class="space-y-1">
+        <div class="font-bold uppercase tracking-wider text-xs text-[var(--text-primary)]">
+          NO MEDIA ASSETS LOCATED
+        </div>
+        <p class="text-[11px] text-[var(--text-dim)] max-w-sm mx-auto">
+          @if (searchQuery()) {
+            No files matched your filter query "{{ searchQuery() }}". Try clearing the search box.
+          } @else {
+            Your image library is currently empty. Drop an image into the upload area above to get started.
+          }
+        </p>
+      </div>
+      @if (searchQuery()) {
+        <button
+          type="button"
+          (click)="searchQuery.set('')"
+          class="px-3 py-1 bg-[var(--bg-canvas)] border border-[var(--border-color)] hover:border-[var(--accent-terminal)] text-xs cursor-pointer"
+        >
+          Clear Filter
+        </button>
+      }
     </div>
   } @else {
+    <!-- Filled State: Media Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       @for (item of filteredMedia(); track item.id) {
         @let isCopied = copiedId() === item.id;
@@ -131,11 +176,12 @@
             <img
               [src]="item.url"
               [alt]="item.alt_text"
+              loading="lazy"
               referrerpolicy="no-referrer"
               class="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-200"
             />
-            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-[var(--accent-terminal)] text-[9px] font-mono border border-black">
-              WEBP
+            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-[var(--accent-terminal)] text-[9px] font-mono border border-black uppercase">
+              {{ item.mime_type.split('/')[1] || 'IMAGE' }}
             </span>
           </div>
 
@@ -146,7 +192,7 @@
             </div>
 
             <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] font-mono">
-              <span>{{ item.dimensions }}</span>
+              <span>{{ item.dimensions || '1920x1080' }}</span>
               <span class="text-[var(--accent-terminal)] font-semibold">{{ item.file_size_kb }} KB</span>
             </div>
 

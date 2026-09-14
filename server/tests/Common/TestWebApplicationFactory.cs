@@ -51,7 +51,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     public HttpClient CreateAnonymousClient()
     {
-        return CreateClient();
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}");
+        return client;
     }
 
     public HttpClient CreateAdminClient()
@@ -60,6 +62,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         client.DefaultRequestHeaders.Add("X-Test-UserId", Guid.NewGuid().ToString());
         client.DefaultRequestHeaders.Add("X-Test-Email", DefaultAdminEmail);
         client.DefaultRequestHeaders.Add("X-Test-Role", UserRoles.Admin);
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}");
         return client;
     }
 
@@ -69,6 +72,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         client.DefaultRequestHeaders.Add("X-Test-UserId", Guid.NewGuid().ToString());
         client.DefaultRequestHeaders.Add("X-Test-Email", email);
         client.DefaultRequestHeaders.Add("X-Test-Role", role);
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}");
         return client;
     }
 

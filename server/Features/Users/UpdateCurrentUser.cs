@@ -24,6 +24,7 @@ public static class UpdateCurrentUserEndpoint
 
             var email = user.GetUserEmail() ?? string.Empty;
             var existingUser = await db.Users
+                .Include(u => u.Information)
                 .FirstOrDefaultAsync(u => u.Id == userId.Value || (!string.IsNullOrWhiteSpace(email) && u.Email.ToLower() == email.ToLower()), ct);
 
             if (existingUser == null)
@@ -50,6 +51,29 @@ public static class UpdateCurrentUserEndpoint
             if (request.DisplayName != null) existingUser.DisplayName = request.DisplayName.Trim();
             if (request.Bio != null) existingUser.Bio = request.Bio.Trim();
             if (request.AvatarUrl != null) existingUser.AvatarUrl = request.AvatarUrl.Trim();
+
+            // Update or initialize UserInformation
+            if (request.JobTitle != null || request.Tagline != null || request.Location != null ||
+                request.BannerUrl != null || request.CopyrightYear != null || request.SocialLinksJson != null)
+            {
+                if (existingUser.Information == null)
+                {
+                    var newInfo = new UserInformation
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = existingUser.Id
+                    };
+                    db.UserInformations.Add(newInfo);
+                    existingUser.Information = newInfo;
+                }
+
+                if (request.JobTitle != null) existingUser.Information.JobTitle = request.JobTitle.Trim();
+                if (request.Tagline != null) existingUser.Information.Tagline = request.Tagline.Trim();
+                if (request.Location != null) existingUser.Information.Location = request.Location.Trim();
+                if (request.BannerUrl != null) existingUser.Information.BannerUrl = request.BannerUrl.Trim();
+                if (request.CopyrightYear != null) existingUser.Information.CopyrightYear = request.CopyrightYear.Trim();
+                if (request.SocialLinksJson != null) existingUser.Information.SocialLinksJson = request.SocialLinksJson.Trim();
+            }
 
             await db.SaveChangesAsync(ct);
 
