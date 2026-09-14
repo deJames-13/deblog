@@ -26,6 +26,7 @@ public static class GetCurrentUserEndpoint
                 string.Equals(email, config["AUTHOR_EMAIL"] ?? config["ADMIN_EMAIL"], StringComparison.OrdinalIgnoreCase);
 
             var existingUser = await db.Users
+                .Include(u => u.Information)
                 .FirstOrDefaultAsync(u => u.Id == userId.Value || (!string.IsNullOrWhiteSpace(email) && u.Email.ToLower() == email.ToLower()), ct);
 
             if (existingUser == null)

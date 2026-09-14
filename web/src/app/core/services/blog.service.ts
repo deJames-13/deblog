@@ -10,6 +10,7 @@ import {
   MediaItem,
   PostStatus,
   SiteProfile,
+  TelemetrySummary,
   ThemeMode,
   ToastMessage,
   TypographyFont,
@@ -30,11 +31,15 @@ import {
   CommentResponseDto,
   CommentCreatedResponseDto,
   AdminCommentResponseDto,
+  MediaStatusDto,
   UserProfileDto,
 } from '../models/api.dto';
 import { PostsApiService } from '../api/posts-api.service';
 import { CommentsApiService } from '../api/comments-api.service';
 import { UsersApiService } from '../api/users-api.service';
+import { MediaApiService } from '../api/media-api.service';
+import { AnalyticsApiService } from '../api/analytics-api.service';
+import { SettingsApiService } from '../api/settings-api.service';
 import { SupabaseAuthService } from '../auth/supabase-auth.service';
 
 const LOCAL_STORAGE_KEYS = {
@@ -278,7 +283,17 @@ export class BlogService {
   private readonly postsApi = inject(PostsApiService);
   private readonly commentsApi = inject(CommentsApiService);
   private readonly usersApi = inject(UsersApiService);
+  private readonly mediaApi = inject(MediaApiService);
+  private readonly analyticsApi = inject(AnalyticsApiService);
+  private readonly settingsApi = inject(SettingsApiService);
   readonly authService = inject(SupabaseAuthService);
+
+  // Telemetry & Media Signals
+  readonly mediaStatus = signal<MediaStatusDto | null>(null);
+  readonly cloudinaryConfigured = signal<boolean>(false);
+  readonly isMediaLoading = signal<boolean>(false);
+  readonly telemetrySummary = signal<TelemetrySummary | null>(null);
+  readonly isTelemetryLoading = signal<boolean>(false);
 
   // Appearance Signals
   readonly theme = signal<ThemeMode>(
@@ -1192,60 +1207,234 @@ export class BlogService {
     this.addToast('User record removed', 'warning');
   }
 
+  // Telemetry Actions
+  loadTelemetry(days = 7): void {
+    if (!this.isAdmin()) return;
+    this.isTelemetryLoading.set(true);
+    this.analyticsApi.get7DayTelemetry(days).subscribe({
+      next: (summary) => {
+        this.telemetrySummary.set({
+          days: summary.days,
+          totalViews7Days: summary.totalViews7Days,
+          peakViews: summary.peakViews,
+          totalComments7Days: summary.totalComments7Days,
+          totalLikes7Days: summary.totalLikes7Days,
+        });
+        this.isTelemetryLoading.set(false);
+      },
+      error: (err) => {
+        console.warn('[BlogService] Telemetry fetch failed:', err);
+        this.isTelemetryLoading.set(false);
+      },
+    });
+  }
+
   // Media Actions
-  uploadMedia(file: {
-    filename: string;
-    url: string;
-    file_size_kb: number;
-    dimensions?: string;
-    alt_text?: string;
-  }): void {
-    const original = file.file_size_kb;
-    const optimized = Math.max(12, Math.round(original * 0.22));
+  loadMedia(page = 1, pageSize = 24, query?: string): void {
+    if (!this.isAdmin()) return;
+    this.isMediaLoading.set(true);
+    this.mediaApi.getStatus().subscribe({
+      next: (status) => this.mediaStatus.set(status),
+      error: () =>
+        this.mediaStatus.set({
+          configured: false,
+          status: 'offline',
+          maxFileSizeKb: 1024,
+          allowedTypes: [],
+        }),
+    });
 
-    const item: MediaItem = {
-      id: `med-${Date.now()}`,
-      filename: file.filename,
-      url: file.url,
-      mime_type: 'image/webp',
-      file_size_kb: optimized,
-      original_size_kb: original,
-      optimized_size_kb: optimized,
-      dimensions: file.dimensions || '1920x1080',
-      uploaded_at: new Date().toISOString(),
-      alt_text: file.alt_text || file.filename.replace(/\.[^/.]+$/, ''),
-    };
-
-    this.media.update((prev) => [item, ...prev]);
-    this.addToast(
-      `Uploaded "${item.filename}" (Optimized ${original}KB -> ${optimized}KB WebP)`,
-      'success'
-    );
+    this.mediaApi.getMedia(page, pageSize, query).subscribe({
+      next: (res) => {
+        const items: MediaItem[] = res.items.map((m) => ({
+          id: m.id,
+          public_id: m.publicId,
+          url: m.url,
+          filename: m.filename,
+          mime_type: m.mimeType,
+          file_size_kb: m.fileSizeKb,
+          original_size_kb: m.fileSizeKb,
+          optimized_size_kb: m.fileSizeKb,
+          dimensions: m.dimensions,
+          uploaded_at: m.createdAt,
+          alt_text: m.altText || m.filename,
+        }));
+        this.media.set(items);
+        this.isMediaLoading.set(false);
+      },
+      error: (err) => {
+        console.warn('[BlogService] Media fetch failed:', err);
+        this.isMediaLoading.set(false);
+      },
+    });
   }
 
-  deleteMedia(id: string): void {
-    this.media.update((prev) => prev.filter((m) => m.id !== id));
-    this.addToast('Media asset removed', 'warning');
+  async uploadMedia(file: File | Blob, filename = 'asset.webp', altText?: string): Promise<MediaItem | null> {
+    try {
+      this.isMediaLoading.set(true);
+      const res = await firstValueFrom(this.mediaApi.uploadMedia(file, filename, altText));
+      const m = res.media;
+      const newItem: MediaItem = {
+        id: m.id,
+        public_id: m.publicId,
+        url: m.url,
+        filename: m.filename,
+        mime_type: m.mimeType,
+        file_size_kb: m.fileSizeKb,
+        original_size_kb: m.fileSizeKb,
+        optimized_size_kb: m.fileSizeKb,
+        dimensions: m.dimensions,
+        uploaded_at: m.createdAt,
+        alt_text: m.altText || m.filename,
+      };
+      this.media.update((prev) => [newItem, ...prev.filter((x) => x.id !== newItem.id)]);
+      this.addToast(res.message || `Uploaded "${m.filename}" successfully`, 'success');
+      return newItem;
+    } catch (err: unknown) {
+      const msg =
+        (err as { error?: { detail?: string; message?: string } })?.error?.detail ||
+        (err as { error?: { message?: string } })?.error?.message ||
+        'Failed to upload image asset';
+      this.addToast(msg, 'error');
+      return null;
+    } finally {
+      this.isMediaLoading.set(false);
+    }
   }
 
-  // Profile Actions
+  async deleteMedia(id: string): Promise<boolean> {
+    try {
+      await firstValueFrom(this.mediaApi.deleteMedia(id));
+      this.media.update((prev) => prev.filter((m) => m.id !== id));
+      this.addToast('Media asset deleted', 'warning');
+      return true;
+    } catch (err) {
+      console.warn('[BlogService] Delete media failed:', err);
+      this.media.update((prev) => prev.filter((m) => m.id !== id));
+      this.addToast('Removed from local view', 'warning');
+      return false;
+    }
+  }
+
+  // Profile & Site Settings Actions
+  loadProfileFromBackend(): void {
+    if (!this.isAdmin()) return;
+    this.settingsApi.getSettings().subscribe({
+      next: (settings) => {
+        if (!settings) return;
+        this.cloudinaryConfigured.set(settings.cloudinaryConfigured);
+        let socials = this.profile().social_links;
+        if (settings.socialLinksJson) {
+          try {
+            socials = JSON.parse(settings.socialLinksJson);
+          } catch {}
+        }
+        this.profile.update((prev) => ({
+          ...prev,
+          name: settings.displayName || prev.name,
+          email: settings.email || prev.email,
+          bio: settings.bio || prev.bio,
+          avatar_url: settings.avatarUrl || prev.avatar_url,
+          role: settings.role || prev.role,
+          tagline: settings.tagline || prev.tagline,
+          location: settings.location || prev.location,
+          banner_url: settings.bannerUrl || prev.banner_url,
+          copyright_year: settings.copyrightYear || prev.copyright_year,
+          social_links: socials,
+        }));
+      },
+      error: (err) => {
+        console.warn('[BlogService] Settings fetch failed, falling back to users API:', err);
+        this.usersApi.getCurrentUser().subscribe({
+          next: (user) => {
+            if (!user) return;
+            let socials = this.profile().social_links;
+            if (user.information?.socialLinksJson) {
+              try {
+                socials = JSON.parse(user.information.socialLinksJson);
+              } catch {}
+            }
+            this.profile.update((prev) => ({
+              ...prev,
+              name: user.displayName || user.username || prev.name,
+              bio: user.bio || prev.bio,
+              avatar_url: user.avatarUrl || prev.avatar_url,
+              role: user.information?.jobTitle || prev.role,
+              tagline: user.information?.tagline || prev.tagline,
+              location: user.information?.location || prev.location,
+              banner_url: user.information?.bannerUrl || prev.banner_url,
+              copyright_year: user.information?.copyrightYear || prev.copyright_year,
+              social_links: socials,
+            }));
+          },
+          error: (err2) => console.warn('[BlogService] Current user fallback fetch failed:', err2),
+        });
+      },
+    });
+  }
+
   updateProfile(data: Partial<SiteProfile>): void {
     this.profile.update((prev) => ({ ...prev, ...data }));
 
     if (this.isAdmin()) {
-      this.usersApi
-        .updateCurrentUser({
+      const socialJson = data.social_links ? JSON.stringify(data.social_links) : undefined;
+      this.settingsApi
+        .updateSettings({
           displayName: data.name,
           bio: data.bio,
           avatarUrl: data.avatar_url,
+          role: data.role,
+          tagline: data.tagline,
+          location: data.location,
+          bannerUrl: data.banner_url,
+          copyrightYear: data.copyright_year,
+          socialLinksJson: socialJson,
         })
         .subscribe({
-          next: () => {},
-          error: (err: unknown) => console.warn('[BlogService] Profile backend update failed:', err),
+          next: (res) => {
+            this.cloudinaryConfigured.set(res.cloudinaryConfigured);
+          },
+          error: (err: unknown) => console.warn('[BlogService] Settings backend update failed:', err),
         });
     }
 
     this.addToast('Profile & Branding updated', 'success');
+  }
+
+  async uploadAvatar(file: File | Blob): Promise<string | null> {
+    try {
+      this.isMediaLoading.set(true);
+      const res = await firstValueFrom(this.settingsApi.uploadAvatar(file));
+      this.profile.update((prev) => ({ ...prev, avatar_url: res.url }));
+      this.addToast('Avatar uploaded to Cloudinary CDN successfully', 'success');
+      return res.url;
+    } catch (err: unknown) {
+      const msg =
+        (err as { error?: { detail?: string } })?.error?.detail ||
+        'Failed to upload avatar to Cloudinary CDN';
+      this.addToast(msg, 'error');
+      return null;
+    } finally {
+      this.isMediaLoading.set(false);
+    }
+  }
+
+  async uploadBanner(file: File | Blob): Promise<string | null> {
+    try {
+      this.isMediaLoading.set(true);
+      const res = await firstValueFrom(this.settingsApi.uploadBanner(file));
+      this.profile.update((prev) => ({ ...prev, banner_url: res.url }));
+      this.addToast('Banner uploaded to Cloudinary CDN successfully', 'success');
+      return res.url;
+    } catch (err: unknown) {
+      const msg =
+        (err as { error?: { detail?: string } })?.error?.detail ||
+        'Failed to upload banner to Cloudinary CDN';
+      this.addToast(msg, 'error');
+      return null;
+    } finally {
+      this.isMediaLoading.set(false);
+    }
   }
 
   // Auth Methods

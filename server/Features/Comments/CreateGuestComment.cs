@@ -90,6 +90,21 @@ public static class CreateGuestCommentEndpoint
             };
 
             db.Comments.Add(comment);
+
+            // Increment daily telemetry comments count
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var telemetry = await db.DailyTelemetries.FirstOrDefaultAsync(t => t.Date == today, ct);
+            if (telemetry == null)
+            {
+                telemetry = new deblog.Server.Features.Analytics.DailyTelemetry
+                {
+                    Id = Guid.NewGuid(),
+                    Date = today
+                };
+                db.DailyTelemetries.Add(telemetry);
+            }
+            telemetry.CommentsCount++;
+
             await db.SaveChangesAsync(ct);
 
             var responseDto = new CommentCreatedResponseDto(

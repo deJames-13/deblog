@@ -184,20 +184,45 @@ deblog/
 
 ---
 
-## To Do's
+## 📋 To Do's
 
-Polishing Phase
+### 🎯 Polishing Phase
 
-- [ ] Dashboard Homepage still has some random mock data analytics. Here are the observed data that needs to be implemented and be realistic.
-	- [ ] 7 day access telemetry has a bar chart with unknow mock data
-  - [ ] Storage telemetry - has no database relatedness and still mock data. must be implemented in both backend and web
-  - [ ] Stats card kinda work but the Likes card has Engagement score: 4.8 / 5
- even tho there is no data yet.
-- [ ] Dashboard Media Page (has yet to be implemented in both web and server)
-  - [ ] Implement cloudinary endpoints and multipart form data in for posts in server
-  - [ ] Update web admin media library page to align and reflect the server
-- [ ] Dashboard admin settings page
-  - [ ] ensure the data of the author properly aligns the database all data such as avatar, banner, name, title, tagline, biography, email, location, and socials is in database 
+#### 💻 Frontend (`/web`)
+- [x] **Dashboard Home Page**
+  - [x] Align 7-day access telemetry with real server and database metrics (`DailyTelemetry`) instead of mock arrays.
+  - [x] Remove mock storage telemetry (no direct OS filesystem access); replace with a tactile BIOS-styled Post Distribution Donut Chart (visualizing status and category breakdowns).
+  - [x] Clean up mock engagement metrics (e.g., replace static `4.8 / 5` score with calculated engagement ratio based on views vs. likes/comments).
+- [x] **Admin Sidebar**
+  - [x] Replace redundant telemetry with a Moderation & System Pulse indicator (pending review counts, DB connectivity status, and last sync timestamp).
+- [x] **Media Page (`/admin/media`)**
+  - [x] Align mock media browser with real server-side image library endpoints (`GET /api/media`, `POST /api/media/upload`, `DELETE /api/media/{id}`).
+  - [x] Implement graceful Degraded/Offline state when Cloudinary credentials are not configured or service is unreachable (with 5 mandatory UI states: Initial, Loading, Empty, Error, Success).
+  - [x] Wire upload dropzone and asset deletion directly to backend API.
+- [x] **Settings Page (`/admin/settings`)**
+  - [x] Ensure all author profile and branding fields persist to database via `deblog.user_information` and reload seamlessly.
+  - [x] Integrate avatar and banner uploads with Cloudinary via server endpoints (avoid storing raw base64 data URLs in database).
+
+#### 🌐 Backend (`/server`)
+- [x] **Cloudinary Infrastructure (`/server/Common`)**
+  - [x] Configure `CloudinaryDotNet` client service wrapper in `Common/Services` with dependency injection.
+  - [x] Add Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` or `CLOUDINARY_URL`) to `.env` and `.env.example`.
+- [x] **Media Feature Slice (`/server/Features/Media`)**
+  - [x] Create dedicated `Media` vertical slice with `MediaItem` entity in isolated `deblog` PostgreSQL schema.
+  - [x] Create `POST /api/media/upload` accepting `multipart/form-data`.
+  - [x] Enforce strict file validation: max 1MB limit (reject files > 1MB with `413 Payload Too Large`), MIME-type verification (JPEG, PNG, WebP, AVIF), magic byte verification.
+  - [x] Image processing pipeline: resize, auto-orient, and convert to standardized WebP before uploading to Cloudinary CDN.
+  - [x] Store asset metadata and CDN URL only in PostgreSQL; never store binary image blobs in Supabase database.
+  - [x] Create `GET /api/media` (paginated asset list) and `DELETE /api/media/{id}` (removes from Cloudinary and DB).
+- [x] **Posts Integration (`/server/Features/Posts`)**
+  - [x] Hybrid post handling: support `multipart/form-data` uploads in `CreatePost` and `UpdatePost` endpoints alongside JSON payloads for inline cover image handling.
+- [x] **Author Settings & Profile Synchronization (`/server/Features/Users`)**
+  - [x] Create `UserInformation` entity and table (`deblog.user_information`) with 1-to-1 foreign key to `deblog.users(id)` storing `tagline`, `location`, `banner_url`, `copyright_year`, and `social_links` (JSONB).
+  - [x] Update `GetCurrentUser` and `UpdateCurrentUser` endpoints and DTOs to load and save `UserInformation`.
+- [x] **Real-Time Telemetry Tracking (`/server/Features/Analytics` & `Common/Services`)**
+  - [x] Create `DailyTelemetry` entity and table (`deblog.daily_telemetry`) recording daily metrics (Date, Views, Likes, Shares, Comments).
+  - [x] Atomically increment daily counts on visitor analytics events.
+  - [x] Provide 7-day access telemetry aggregation endpoint (`GET /api/admin/analytics/telemetry`) returning 7 chronological days.
 
 
 ---
@@ -356,11 +381,17 @@ pnpm test
 
 ## 📍 Roadmap
 
-- [ ] web and server Integration
-- [ ] web and Supabase JWT authentication Setup
-- [ ] Post management optimizing
-- [ ] Web placeholder and mock data clean up
-- [ ] web and server data alignment
+- [x] **Phase 1: Core Architecture & Slices** — ASP.NET Core 10 Minimal APIs, VSA, isolated `deblog` schema on Supabase PostgreSQL, and Angular 22 Signal-driven client.
+- [x] **Phase 2: Authentication & RBAC** — Supabase Auth JWT validation, role-based authorization policies (`AdminOnly`), and visitor IP deduplication.
+- [x] **Phase 3: Content & Moderation Workflows** — Full Post CRUD, draft/published visibility states, guest commenting with `X-Comment-Token`, and admin comment review queue.
+- [x] **Phase 4: Polishing & Media Pipeline**
+  - [x] Cloudinary CDN integration in `server/Common` with max 1MB validation, resizing, and WebP optimization.
+  - [x] Dedicated `Features/Media` library slice with multipart uploads, metadata persistence, and browser UI alignment.
+  - [x] Support multipart form data for direct image attachment in `Features/Posts`.
+  - [x] Dynamic database-backed 7-day telemetry and KPI chart analytics (removing fake storage stats).
+  - [x] Full Author Settings & Site Profile persistence in PostgreSQL database.
+  - [x] Clean up mock data and implement graceful offline states for media assets.
+- [ ] **Phase 5: Production Deployment & Hardening** — Multi-stage Docker builds, CI/CD pipeline, CDN edge caching, and end-to-end audit.
 
 ---
 

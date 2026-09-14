@@ -1,8 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
+  LucideAlertTriangle,
   LucideCheck,
   LucideCopy,
+  LucideHardDrive,
+  LucideRefreshCw,
   LucideSearch,
   LucideTrash2,
   LucideUploadCloud,
@@ -22,20 +25,29 @@ import { TooltipDirective } from '../../common/tooltip/tooltip.directive';
     LucideTrash2,
     LucideCheck,
     LucideSearch,
+    LucideAlertTriangle,
+    LucideRefreshCw,
+    LucideHardDrive,
   ],
   templateUrl: './admin-media.component.html',
 })
-export class AdminMediaComponent {
+export class AdminMediaComponent implements OnInit {
   private readonly blogService = inject(BlogService);
   private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly media = this.blogService.media;
+  readonly mediaStatus = this.blogService.mediaStatus;
+  readonly isMediaLoading = this.blogService.isMediaLoading;
+
+  readonly isOffline = computed(() => {
+    const status = this.mediaStatus();
+    return status !== null && (!status.configured || status.status === 'offline');
+  });
 
   readonly searchQuery = signal<string>('');
-  readonly customUrl = signal<string>('');
-  readonly customName = signal<string>('');
   readonly isDragging = signal<boolean>(false);
   readonly copiedId = signal<string | null>(null);
+  readonly isUploading = signal<boolean>(false);
 
   readonly filteredMedia = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -43,82 +55,69 @@ export class AdminMediaComponent {
       (m) =>
         !q ||
         m.filename.toLowerCase().includes(q) ||
-        m.alt_text.toLowerCase().includes(q)
+        m.alt_text?.toLowerCase().includes(q)
     );
   });
 
-  readonly totalOriginalKb = computed(() =>
-    this.media().reduce((sum, m) => sum + m.original_size_kb, 0)
+  readonly totalFilesCount = computed(() => this.media().length);
+  readonly totalSizeKb = computed(() =>
+    this.media().reduce((sum, m) => sum + (m.file_size_kb || 0), 0)
   );
-  readonly totalOptimizedKb = computed(() =>
-    this.media().reduce((sum, m) => sum + m.optimized_size_kb, 0)
-  );
-  readonly spaceSavedPct = computed(() => {
-    const orig = this.totalOriginalKb();
-    const saved = Math.max(0, orig - this.totalOptimizedKb());
-    return orig > 0 ? Math.round((saved / orig) * 100) : 0;
-  });
 
-  handleManualUpload(e: Event): void {
-    e.preventDefault();
-    const url = this.customUrl().trim();
-    if (!url) return;
-
-    const name = this.customName().trim();
-    const filename = name || url.split('/').pop()?.split('?')[0] || 'uploaded-asset.webp';
-    const fakeOriginalSize = Math.floor(Math.random() * 400) + 200;
-
-    this.blogService.uploadMedia({
-      filename,
-      url,
-      file_size_kb: fakeOriginalSize,
-      dimensions: '1920x1080',
-      alt_text: name || 'Technical schematic figure',
-    });
-
-    this.customUrl.set('');
-    this.customName.set('');
+  ngOnInit(): void {
+    this.refreshMedia();
   }
 
-  handleFileDrop(e: DragEvent): void {
+  refreshMedia(): void {
+    this.blogService.loadMedia(1, 50, this.searchQuery());
+  }
+
+  async handleFileDrop(e: DragEvent): Promise<void> {
     e.preventDefault();
     this.isDragging.set(false);
 
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      const objectUrl = URL.createObjectURL(file);
-      const fakeSizeKb = Math.round(file.size / 1024) || 350;
-
-      this.blogService.uploadMedia({
-        filename: file.name,
-        url: objectUrl,
-        file_size_kb: fakeSizeKb,
-        dimensions: '1920x1080',
-        alt_text: file.name.replace(/\.[^/.]+$/, ''),
-      });
+      await this.processUploadFile(e.dataTransfer.files[0]);
     }
   }
 
-  handleFileInputChange(e: Event): void {
+  async handleFileInputChange(e: Event): Promise<void> {
     const input = e.target as HTMLInputElement;
     if (input?.files && input.files.length > 0) {
-      const file = input.files[0];
-      const objectUrl = URL.createObjectURL(file);
-      const fakeSizeKb = Math.round(file.size / 1024) || 280;
-
-      this.blogService.uploadMedia({
-        filename: file.name,
-        url: objectUrl,
-        file_size_kb: fakeSizeKb,
-        dimensions: '1920x1080',
-        alt_text: file.name.replace(/\.[^/.]+$/, ''),
-      });
+      await this.processUploadFile(input.files[0]);
       input.value = '';
     }
   }
 
+  private async processUploadFile(file: File): Promise<void> {
+    // 1. Validate MIME type
+    if (!file.type.startsWith('image/')) {
+      this.blogService.addToast('Only image files (JPEG, PNG, WebP, AVIF) are permitted.', 'error');
+      return;
+    }
+
+    // 2. Strict 1MB size limit check (1024 * 1024 bytes)
+    const maxSizeBytes = 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      const sizeKb = Math.round(file.size / 1024);
+      this.blogService.addToast(
+        `File size (${sizeKb} KB) exceeds the maximum allowed limit of 1MB (1024 KB). Upload rejected.`,
+        'error'
+      );
+      return;
+    }
+
+    // 3. Upload to server/Cloudinary
+    this.isUploading.set(true);
+    try {
+      await this.blogService.uploadMedia(file, file.name, file.name.replace(/\.[^/.]+$/, ''));
+    } finally {
+      this.isUploading.set(false);
+    }
+  }
+
   async copyMarkdown(item: MediaItem): Promise<void> {
-    const md = `![${item.alt_text}](${item.url})`;
+    const md = `![${item.alt_text || item.filename}](${item.url})`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(md);
@@ -135,13 +134,13 @@ export class AdminMediaComponent {
     const confirmed = await this.confirmDialog.confirm({
       title: 'DELETE_MEDIA_ASSET',
       message: `Are you sure you want to delete media asset "${filename}"?`,
-      details: 'This file will be permanently removed from storage and cannot be recovered.',
+      details: 'This file will be permanently removed from Cloudinary CDN and the database.',
       confirmText: 'DELETE ASSET',
       cancelText: 'CANCEL',
       tone: 'danger',
     });
     if (confirmed) {
-      this.blogService.deleteMedia(id);
+      await this.blogService.deleteMedia(id);
     }
   }
 }

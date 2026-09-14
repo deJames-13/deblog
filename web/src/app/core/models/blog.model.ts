@@ -58,11 +58,29 @@ export interface MediaItem {
   url: string;
   mime_type: string;
   file_size_kb: number;
-  original_size_kb: number;
-  optimized_size_kb: number;
+  original_size_kb?: number;
+  optimized_size_kb?: number;
   dimensions: string;
   uploaded_at: string;
   alt_text: string;
+  public_id?: string;
+}
+
+export interface DailyTelemetry {
+  day: string;
+  date: string;
+  views: number;
+  likes: number;
+  shares: number;
+  comments: number;
+}
+
+export interface TelemetrySummary {
+  days: DailyTelemetry[];
+  totalViews7Days: number;
+  peakViews: number;
+  totalComments7Days: number;
+  totalLikes7Days: number;
 }
 
 export interface SiteProfile {

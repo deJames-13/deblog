@@ -1,8 +1,11 @@
 using deblog.Server.Common.Extensions;
 using deblog.Server.Common.Middleware;
 using deblog.Server.Common.Services;
+using deblog.Server.Features.Analytics;
 using deblog.Server.Features.Comments;
+using deblog.Server.Features.Media;
 using deblog.Server.Features.Posts;
+using deblog.Server.Features.Settings;
 using deblog.Server.Features.Users;
 using DotNetEnv;
 
@@ -36,9 +39,10 @@ builder.Services.AddDatabase(builder.Configuration);
 // 4. Supabase Auth & JWT Bearer with AdminOnly policy
 builder.Services.AddSupabaseAuthentication(builder.Configuration);
 
-// 5. In-Memory Cache & Analytics Tracker
+// 5. In-Memory Cache & Analytics Tracker & Cloudinary
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IAnalyticsTracker, MemoryAnalyticsTracker>();
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IDataReconciliationService, DataReconciliationService>();
 builder.Services.AddHostedService<DataSyncBackgroundService>();
 
@@ -137,6 +141,9 @@ app.MapGet("/", () => Results.Ok(new
 app.MapUserEndpoints();
 app.MapPostEndpoints();
 app.MapCommentEndpoints();
+app.MapMediaEndpoints();
+app.MapAnalyticsEndpoints();
+app.MapSettingsEndpoints();
 
 app.Run();
 

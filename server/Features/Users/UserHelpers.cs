@@ -4,6 +4,16 @@ public static class UserHelpers
 {
     public static UserProfileDto ToProfileDto(User user)
     {
+        var infoDto = user.Information != null
+            ? new UserInformationDto(
+                user.Information.JobTitle,
+                user.Information.Tagline,
+                user.Information.Location,
+                user.Information.BannerUrl,
+                user.Information.CopyrightYear,
+                user.Information.SocialLinksJson)
+            : null;
+
         return new UserProfileDto(
             user.Id,
             user.Email,
@@ -15,7 +25,8 @@ public static class UserHelpers
             user.Status,
             user.IsDeleted,
             user.DeletedAt,
-            user.CreatedAt
+            user.CreatedAt,
+            infoDto
         );
     }
 }

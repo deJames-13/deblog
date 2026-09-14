@@ -22,10 +22,16 @@
       <button
         type="button"
         (click)="handleSave($event)"
-        class="flex items-center gap-1.5 px-4 py-1 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase hover:opacity-90 cursor-pointer"
+        [disabled]="isUploading()"
+        class="flex items-center gap-1.5 px-4 py-1 bg-[var(--accent-terminal)] text-[var(--accent-terminal-contrast)] font-bold text-xs uppercase hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
-        <svg lucideSave class="w-3.5 h-3.5"></svg>
-        <span>Save Changes</span>
+        @if (isUploading()) {
+          <svg lucideLoader class="w-3.5 h-3.5 animate-spin"></svg>
+          <span>Uploading...</span>
+        } @else {
+          <svg lucideSave class="w-3.5 h-3.5"></svg>
+          <span>Save Changes</span>
+        }
       </button>
     </div>
   </div>
@@ -33,9 +39,28 @@
   <form (submit)="handleSave($event)" class="space-y-4">
     <!-- Section 1: Visual Identity & Branding -->
     <div class="border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm space-y-4">
-      <div class="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)] font-bold uppercase tracking-wider text-[var(--accent-terminal)]">
-        <svg lucideImage class="w-4 h-4"></svg>
-        <span>VISUAL BRANDING & ASSETS</span>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-subtle)]">
+        <div class="flex items-center gap-2 font-bold uppercase tracking-wider text-[var(--accent-terminal)]">
+          <svg lucideImage class="w-4 h-4"></svg>
+          <span>VISUAL BRANDING & ASSETS</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-[10px]">
+          @if (cloudinaryConfigured()) {
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 border border-[var(--accent-terminal)] text-[var(--accent-terminal)] font-semibold tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--accent-terminal)] animate-pulse"></span>
+              CLOUDINARY CDN: CONNECTED
+            </span>
+          } @else {
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 border border-[var(--accent-orange)] text-[var(--accent-orange)] font-semibold tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--accent-orange)]"></span>
+              CDN: OFFLINE / LOCAL PREVIEWS
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="text-[10px] text-[var(--text-dim)] border-l-2 border-[var(--accent-terminal)] pl-2 py-0.5 bg-[var(--bg-canvas)]">
+        Images are uploaded directly to Cloudinary CDN with automatic WebP optimization. Only secure CDN URL links are saved in the database.
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,13 +80,20 @@
                 alt="Avatar Preview"
                 class="w-full h-full object-cover grayscale"
               />
-              <button
-                type="button"
-                (click)="openCropperForCurrent('avatar_url')"
-                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
-              >
-                CROP
-              </button>
+              @if (isUploading() && cropTargetField() === 'avatar_url') {
+                <div class="absolute inset-0 bg-black/75 flex flex-col items-center justify-center text-[var(--accent-terminal)]">
+                  <svg lucideLoader class="w-4 h-4 animate-spin"></svg>
+                  <span class="text-[8px] uppercase tracking-wider mt-1">CDN SYNC</span>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  (click)="openCropperForCurrent('avatar_url')"
+                  class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
+                >
+                  CROP
+                </button>
+              }
             </div>
 
             <div class="flex-1 space-y-2">
@@ -112,13 +144,20 @@
                 alt="Banner Preview"
                 class="w-full h-full object-cover grayscale opacity-80"
               />
-              <button
-                type="button"
-                (click)="openCropperForCurrent('banner_url')"
-                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
-              >
-                CROP BANNER
-              </button>
+              @if (isUploading() && cropTargetField() === 'banner_url') {
+                <div class="absolute inset-0 bg-black/75 flex items-center justify-center gap-2 text-[var(--accent-terminal)]">
+                  <svg lucideLoader class="w-4 h-4 animate-spin"></svg>
+                  <span class="text-[9px] uppercase tracking-wider">CDN SYNC IN PROGRESS...</span>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  (click)="openCropperForCurrent('banner_url')"
+                  class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[var(--accent-terminal)] text-[10px] font-bold cursor-pointer transition-opacity"
+                >
+                  CROP BANNER
+                </button>
+              }
             </div>
 
             <input

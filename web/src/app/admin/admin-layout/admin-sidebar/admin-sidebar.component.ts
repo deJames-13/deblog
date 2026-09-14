@@ -1,6 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
 import {
-  LucideActivity,
   LucideExternalLink,
   LucideFileText,
   LucideImage,
@@ -9,6 +8,7 @@ import {
   LucideMessageSquare,
   LucideSettings,
   LucideUsers,
+  LucideZap,
 } from '@lucide/angular';
 import { BlogService } from '../../../core/services/blog.service';
 import { AdminTab } from '../../../core/models/blog.model';
@@ -28,7 +28,7 @@ import { TooltipDirective } from '../../../common/tooltip/tooltip.directive';
     LucideSettings,
     LucideExternalLink,
     LucideLogOut,
-    LucideActivity,
+    LucideZap,
   ],
   templateUrl: './admin-sidebar.component.html',
   styleUrl: './admin-sidebar.component.css',
@@ -42,10 +42,26 @@ export class AdminSidebarComponent {
   readonly publishedPosts = this.blogService.publishedPosts;
   readonly draftPostsCount = this.blogService.draftPostsCount;
   readonly pendingCommentsCount = this.blogService.pendingCommentsCount;
+  readonly mediaStatus = this.blogService.mediaStatus;
+  readonly isOfflineFallback = this.blogService.isOfflineFallback;
+  readonly lastSyncedAt = this.blogService.lastSyncedAt;
 
   readonly totalViews = computed(() =>
     this.posts().reduce((sum, p) => sum + p.views_count, 0)
   );
+
+  readonly systemStatus = computed(() =>
+    this.isOfflineFallback() ? 'OFFLINE' : 'ONLINE'
+  );
+
+  readonly cdnStatus = computed(() =>
+    this.mediaStatus()?.configured ? 'ONLINE' : 'DEGRADED'
+  );
+
+  readonly lastSyncedTime = computed(() => {
+    const d = this.lastSyncedAt();
+    return d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'ACTIVE';
+  });
 
   readonly adminNavItems = computed(() => {
     const drafts = this.draftPostsCount();
