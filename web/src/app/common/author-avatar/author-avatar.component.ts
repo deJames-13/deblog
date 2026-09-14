@@ -1,4 +1,4 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, effect, input, signal } from '@angular/core';
 
 @Component({
   selector: 'app-author-avatar',
@@ -36,20 +36,29 @@ import { Component, computed, input, signal } from '@angular/core';
 export class AuthorAvatarComponent {
   readonly name = input<string>('Author');
   readonly avatarUrl = input<string | undefined>(undefined);
-  readonly size = input<'xs' | 'sm' | 'md' | 'lg'>('sm');
+  readonly size = input<'xs' | 'sm' | 'md' | 'lg' | 'xl'>('sm');
   readonly customClass = input<string>('');
   readonly showStatus = input<boolean>(false);
   readonly isOnline = input<boolean>(false);
 
   readonly imageError = signal<boolean>(false);
 
+  constructor() {
+    // Whenever avatar URL input changes, reset error state so the new image attempts loading
+    effect(() => {
+      this.avatarUrl();
+      this.imageError.set(false);
+    });
+  }
+
   readonly resolvedAvatarUrl = computed(() => {
-    const raw = this.avatarUrl();
-    if (!raw) return undefined;
+    const raw = this.avatarUrl()?.trim();
+    if (!raw || raw === 'null' || raw === 'undefined') return undefined;
     if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
       return raw;
     }
-    return raw.startsWith('/') ? raw : `/${raw}`;
+    const cleaned = raw.startsWith('public/') ? raw.substring(6) : raw;
+    return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
   });
 
   readonly initial = computed(() => {
@@ -62,6 +71,7 @@ export class AuthorAvatarComponent {
     sm: 'w-5 h-5 text-[10px]',
     md: 'w-7 h-7 text-xs',
     lg: 'w-10 h-10 text-sm',
+    xl: 'w-16 h-16 text-xl',
   };
 
   private readonly dotSizeMap = {
@@ -69,6 +79,7 @@ export class AuthorAvatarComponent {
     sm: 'w-2 h-2',
     md: 'w-2.5 h-2.5',
     lg: 'w-3 h-3',
+    xl: 'w-3.5 h-3.5',
   };
 
   readonly imgClass = computed(() => {

@@ -105,8 +105,10 @@ function getSavedString(key: string, fallback: string): string {
 
 function getSavedProfile(): SiteProfile {
   const p = getSaved<SiteProfile>(LOCAL_STORAGE_KEYS.PROFILE, INITIAL_PROFILE);
-  if (!p.avatar_url || p.avatar_url.includes('AVATAR_DARK.png') || p.avatar_url.includes('derickespinosa.site')) {
-    p.avatar_url = 'public/assets/images/me.png';
+  if (!p.avatar_url || p.avatar_url.includes('AVATAR_DARK.png') || p.avatar_url === 'public/assets/images/me.png') {
+    p.avatar_url = '/assets/images/me.png';
+  } else if (p.avatar_url.startsWith('public/')) {
+    p.avatar_url = p.avatar_url.replace(/^public\//, '/');
   }
   return p;
 }
@@ -537,6 +539,9 @@ export class BlogService {
         this.lastSyncedAt.set(new Date());
       }
 
+      // Always sync author branding / profile settings from backend
+      this.loadProfileFromBackend();
+
       // If admin is active, sync admin data as well silently
       if (this.isAdmin()) {
         await Promise.allSettled([
@@ -568,6 +573,7 @@ export class BlogService {
 
     this.isLoading.set(true);
     this.apiError.set(null);
+    this.loadProfileFromBackend();
     await this.syncFromBackend({ silent: false });
   }
 
@@ -1318,7 +1324,6 @@ export class BlogService {
 
   // Profile & Site Settings Actions
   loadProfileFromBackend(): void {
-    if (!this.isAdmin()) return;
     this.settingsApi.getSettings().subscribe({
       next: (settings) => {
         if (!settings) return;
@@ -1344,31 +1349,33 @@ export class BlogService {
         }));
       },
       error: (err) => {
-        console.warn('[BlogService] Settings fetch failed, falling back to users API:', err);
-        this.usersApi.getCurrentUser().subscribe({
-          next: (user) => {
-            if (!user) return;
-            let socials = this.profile().social_links;
-            if (user.information?.socialLinksJson) {
-              try {
-                socials = JSON.parse(user.information.socialLinksJson);
-              } catch {}
-            }
-            this.profile.update((prev) => ({
-              ...prev,
-              name: user.displayName || user.username || prev.name,
-              bio: user.bio || prev.bio,
-              avatar_url: user.avatarUrl || prev.avatar_url,
-              role: user.information?.jobTitle || prev.role,
-              tagline: user.information?.tagline || prev.tagline,
-              location: user.information?.location || prev.location,
-              banner_url: user.information?.bannerUrl || prev.banner_url,
-              copyright_year: user.information?.copyrightYear || prev.copyright_year,
-              social_links: socials,
-            }));
-          },
-          error: (err2) => console.warn('[BlogService] Current user fallback fetch failed:', err2),
-        });
+        console.warn('[BlogService] Settings fetch failed:', err);
+        if (this.isAdmin()) {
+          this.usersApi.getCurrentUser().subscribe({
+            next: (user) => {
+              if (!user) return;
+              let socials = this.profile().social_links;
+              if (user.information?.socialLinksJson) {
+                try {
+                  socials = JSON.parse(user.information.socialLinksJson);
+                } catch {}
+              }
+              this.profile.update((prev) => ({
+                ...prev,
+                name: user.displayName || user.username || prev.name,
+                bio: user.bio || prev.bio,
+                avatar_url: user.avatarUrl || prev.avatar_url,
+                role: user.information?.jobTitle || prev.role,
+                tagline: user.information?.tagline || prev.tagline,
+                location: user.information?.location || prev.location,
+                banner_url: user.information?.bannerUrl || prev.banner_url,
+                copyright_year: user.information?.copyrightYear || prev.copyright_year,
+                social_links: socials,
+              }));
+            },
+            error: (err2) => console.warn('[BlogService] Current user fallback fetch failed:', err2),
+          });
+        }
       },
     });
   }

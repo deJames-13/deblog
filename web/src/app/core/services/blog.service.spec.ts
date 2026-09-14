@@ -7,6 +7,7 @@ import { BlogService } from './blog.service';
 import { PostsApiService } from '../api/posts-api.service';
 import { CommentsApiService } from '../api/comments-api.service';
 import { UsersApiService } from '../api/users-api.service';
+import { SettingsApiService } from '../api/settings-api.service';
 import { SupabaseAuthService } from '../auth/supabase-auth.service';
 import { AdminCommentResponseDto, PagedResult, PostListItemDto, UserProfileDto } from '../models/api.dto';
 import { UserAccount } from '../models/blog.model';
@@ -16,6 +17,7 @@ describe('BlogService Admin Fetching (TDD)', () => {
   let postsApiSpy: { getPosts: ReturnType<typeof vi.fn> };
   let commentsApiSpy: { getAdminComments: ReturnType<typeof vi.fn> };
   let usersApiSpy: { getAdminUsers: ReturnType<typeof vi.fn>; deleteUser: ReturnType<typeof vi.fn> };
+  let settingsApiSpy: { getSettings: ReturnType<typeof vi.fn> };
   let authServiceStub: Partial<SupabaseAuthService>;
 
   beforeEach(() => {
@@ -28,6 +30,9 @@ describe('BlogService Admin Fetching (TDD)', () => {
     usersApiSpy = {
       getAdminUsers: vi.fn().mockReturnValue(of({ items: [], page: 1, pageSize: 50, totalCount: 0, totalPages: 0 })),
       deleteUser: vi.fn().mockReturnValue(of(undefined)),
+    };
+    settingsApiSpy = {
+      getSettings: vi.fn().mockReturnValue(of(null)),
     };
     authServiceStub = {
       isAdmin: signal(true),
@@ -43,6 +48,7 @@ describe('BlogService Admin Fetching (TDD)', () => {
         { provide: PostsApiService, useValue: postsApiSpy },
         { provide: CommentsApiService, useValue: commentsApiSpy },
         { provide: UsersApiService, useValue: usersApiSpy },
+        { provide: SettingsApiService, useValue: settingsApiSpy },
         { provide: SupabaseAuthService, useValue: authServiceStub },
       ],
     });
@@ -358,6 +364,37 @@ describe('BlogService Admin Fetching (TDD)', () => {
 
     // Assert: user is restored in users signal
     expect(service.users().some((u) => u.id === userId)).toBe(true);
+  });
+
+  it('loadProfileFromBackend() should execute in guest mode and update profile avatar_url and banner_url from settingsApi', () => {
+    // Guest mode: isAdmin is false
+    (authServiceStub.isAdmin as any).set(false);
+    (authServiceStub.isAuthenticated as any).set(false);
+
+    const mockSettings = {
+      siteTitle: 'Deblog Site',
+      tagline: 'Engineering Blog',
+      copyrightYear: 2026,
+      avatarUrl: 'https://res.cloudinary.com/demo/image/upload/v12345/new-avatar.png',
+      bannerUrl: 'https://res.cloudinary.com/demo/image/upload/v12345/new-banner.png',
+      displayName: 'Derick Espinosa',
+      email: 'derick@example.com',
+      bio: 'Fullstack Software Engineer',
+      location: 'Manila, Philippines',
+      socialLinksJson: JSON.stringify({ github: 'https://github.com/deJames-13' }),
+      cloudinaryConfigured: true,
+    };
+
+    settingsApiSpy.getSettings.mockReturnValue(of(mockSettings));
+
+    service.loadProfileFromBackend();
+
+    expect(settingsApiSpy.getSettings).toHaveBeenCalled();
+    expect(service.profile().avatar_url).toBe('https://res.cloudinary.com/demo/image/upload/v12345/new-avatar.png');
+    expect(service.profile().banner_url).toBe('https://res.cloudinary.com/demo/image/upload/v12345/new-banner.png');
+    expect(service.profile().name).toBe('Derick Espinosa');
+    expect(service.profile().tagline).toBe('Engineering Blog');
+    expect(service.cloudinaryConfigured()).toBe(true);
   });
 });
 

@@ -1,4 +1,4 @@
-import { Component, computed, inject, output } from '@angular/core';
+import { Component, OnInit, computed, inject, output } from '@angular/core';
 import {
   LucideCalendar,
   LucideClock,
@@ -11,11 +11,13 @@ import {
 } from '@lucide/angular';
 import { BlogService } from '../../core/services/blog.service';
 import { PresenceService } from '../../core/services/presence.service';
+import { AuthorAvatarComponent } from '../../common/author-avatar/author-avatar.component';
 import { SocialIconComponent } from '../../common/social-icon/social-icon.component';
 
 @Component({
   selector: 'app-sidebar',
   imports: [
+    AuthorAvatarComponent,
     SocialIconComponent,
     LucideRadio,
     LucideMapPin,
@@ -28,9 +30,14 @@ import { SocialIconComponent } from '../../common/social-icon/social-icon.compon
   ],
   templateUrl: './sidebar.component.html',
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   private readonly blogService = inject(BlogService);
   private readonly presenceService = inject(PresenceService);
+
+  ngOnInit(): void {
+    // Ensure the latest author avatar, bio, and identity are synchronized in guest mode
+    this.blogService.loadProfileFromBackend();
+  }
 
   readonly isAuthorOnline = this.presenceService.isAuthorOnline;
   readonly presenceStatus = this.presenceService.presenceStatus;

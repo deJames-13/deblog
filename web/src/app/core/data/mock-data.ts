@@ -7,7 +7,7 @@ export const INITIAL_PROFILE: SiteProfile = {
   bio: 'Specializing in Microsoft Power Platform (Power Apps, Power Automate, Dataverse) and modern TypeScript web ecosystems. Passionate about distraction-free systems architecture and BIOS-style computational aesthetics.',
   email: 'drckespinosa.13@gmail.com',
   location: 'Manila, Philippines / Remote',
-  avatar_url: 'public/assets/images/me.png',
+  avatar_url: '/assets/images/me.png',
   banner_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
   copyright_year: '2026',
   social_links: {
