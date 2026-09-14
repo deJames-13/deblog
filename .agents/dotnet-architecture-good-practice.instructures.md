@@ -1,0 +1,1 @@
+/home/dej/Projects/projectx/deblog/server/.agents/dotnet-architecture-good-practice.instructures.md
