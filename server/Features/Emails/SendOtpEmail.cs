@@ -1,3 +1,4 @@
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Common.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -54,7 +55,8 @@ public static class SendOtpEmailEndpoints
             ));
         })
         .WithName("SendOnboardingOtp")
-        .WithSummary("Dispatch onboarding/account verification OTP code via email");
+        .WithSummary("Dispatch onboarding/account verification OTP code via email")
+        .RequireRateLimiting(RateLimitingPolicies.OtpSpam);
 
         // 2. Password Reset OTP
         group.MapPost("/otp/password-reset", async (
@@ -100,7 +102,8 @@ public static class SendOtpEmailEndpoints
             ));
         })
         .WithName("SendPasswordResetOtp")
-        .WithSummary("Dispatch password reset security OTP code via email");
+        .WithSummary("Dispatch password reset security OTP code via email")
+        .RequireRateLimiting(RateLimitingPolicies.OtpSpam);
 
         return group;
     }

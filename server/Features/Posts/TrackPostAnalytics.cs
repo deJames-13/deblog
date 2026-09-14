@@ -1,4 +1,5 @@
 using deblog.Server.Common.Data;
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Common.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,7 +57,8 @@ public static class TrackPostAnalyticsEndpoint
             return Results.Ok(new { likes = post.Analytics?.Likes ?? 0 });
         })
         .WithName("TrackPostLike")
-        .WithSummary("Increment post like counter with visitor cooldown deduplication");
+        .WithSummary("Increment post like counter with visitor cooldown deduplication")
+        .RequireRateLimiting(RateLimitingPolicies.ReactionSpam);
 
         // POST /api/posts/{idOrSlug}/analytics/share
         group.MapPost("/{idOrSlug}/analytics/share", async (
@@ -81,7 +83,8 @@ public static class TrackPostAnalyticsEndpoint
             return Results.Ok(new { shares = post.Analytics?.Shares ?? 0 });
         })
         .WithName("TrackPostShare")
-        .WithSummary("Increment post share counter with visitor cooldown deduplication");
+        .WithSummary("Increment post share counter with visitor cooldown deduplication")
+        .RequireRateLimiting(RateLimitingPolicies.ReactionSpam);
 
         return group;
     }

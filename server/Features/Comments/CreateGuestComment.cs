@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using deblog.Server.Common.Data;
+using deblog.Server.Common.Security.RateLimiting;
 using deblog.Server.Features.Users;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -120,7 +121,8 @@ public static class CreateGuestCommentEndpoint
             return Results.Created($"/api/posts/{postId}/comments/{comment.Id}", responseDto);
         })
         .WithName("CreateGuestComment")
-        .WithSummary("Post a comment as a guest with email validation (returns management token for editing/removal)");
+        .WithSummary("Post a comment as a guest with email validation (returns management token for editing/removal)")
+        .RequireRateLimiting(RateLimitingPolicies.CommentSpam);
 
         return group;
     }
